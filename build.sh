@@ -11,4 +11,5 @@ cd ..
 # 2. Install Python Dependencies & Collectstatic
 pip install -r requirements.txt
 python manage.py collectstatic --no-input
-python manage.py migrate
+
+# (MIGRATE LINE REMOVED HERE TO AVOID DB ENGINE ISSUE)
