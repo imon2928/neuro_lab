@@ -22,7 +22,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY") or (
 if not SECRET_KEY:
     raise RuntimeError("Set DJANGO_SECRET_KEY when DJANGO_DEBUG is False.")
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+ALLOWED_HOSTS = ['.vercel.app', '127.0.0.1', 'localhost']
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 INSTALLED_APPS = [
@@ -59,8 +59,9 @@ TIME_ZONE = "Asia/Dhaka"
 USE_I18N = False
 USE_TZ = True
 
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
