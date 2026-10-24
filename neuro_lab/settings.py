@@ -3,10 +3,13 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-neuro-lab-virtual-simulation-super-secret-key'
+# Render Environment Variable থেকে সিক্রেট কি নেওয়া (ডিফল্ট ফলব্যাক সহ)
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-neuro-lab-virtual-simulation-super-secret-key')
 
-DEBUG = True
+# প্রোডাকশনের জন্য DEBUG ট্রু বা ফলস সেট করা
+DEBUG = os.environ.get('DEBUG', 'False') == 'False'
 
+# Render-এর সাবডোমেইন এবং লোকালহোস্ট এলাও করা
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -16,11 +19,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'simulator',  # আমাদের নিউরো ল্যাব অ্যাপ
+    'simulator',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # <-- এটি যোগ করা হয়েছে (স্ট্যাটিক ফাইলের জন্য)
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -63,5 +67,9 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
