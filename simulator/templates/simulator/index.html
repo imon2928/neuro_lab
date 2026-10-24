@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="bn">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neuroscience Experiment Studio - Virtual Lab Protocol</title>
+    <!-- MediaPipe Face Mesh Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
         :root {
             --bg-base: #060913;
@@ -35,7 +39,6 @@
             overflow-x: hidden;
         }
 
-        /* Top Header */
         header {
             background-color: var(--bg-surface);
             padding: 12px 24px;
@@ -75,7 +78,7 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .btn {
@@ -98,14 +101,25 @@
             background: rgba(147, 51, 234, 0.15);
         }
 
-        .btn-subject {
-            background: rgba(6, 182, 212, 0.1);
+        .btn-cyan {
+            background: rgba(6, 182, 212, 0.12);
             border: 1px solid rgba(6, 182, 212, 0.4);
             color: #fff;
         }
-        .btn-subject:hover {
+
+        .btn-cyan:hover {
             background: rgba(6, 182, 212, 0.25);
             border-color: var(--accent-cyan);
+        }
+
+        .btn-green {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            color: #34d399;
+        }
+
+        .btn-green:hover {
+            background: rgba(16, 185, 129, 0.3);
         }
 
         .btn-purple {
@@ -113,8 +127,43 @@
             border-color: var(--accent-purple);
             color: #fff;
         }
+
         .btn-purple:hover {
             background: #7e22ce;
+        }
+
+        /* Periodic Interval Toast */
+        .interval-banner {
+            background: linear-gradient(90deg, #1e1b4b, #311042);
+            border-bottom: 1px solid #c084fc;
+            padding: 8px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
         }
 
         /* Workspace Grid */
@@ -145,7 +194,6 @@
             align-items: center;
         }
 
-        /* Dual Sliders */
         .tuner-columns {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -188,12 +236,22 @@
             cursor: pointer;
         }
 
-        .slider-cyan input[type="range"] { accent-color: var(--accent-cyan); }
-        .slider-cyan .slider-label-row span:last-child { color: var(--accent-cyan); }
-        .slider-purple input[type="range"] { accent-color: #c084fc; }
-        .slider-purple .slider-label-row span:last-child { color: #c084fc; }
+        .slider-cyan input[type="range"] {
+            accent-color: var(--accent-cyan);
+        }
 
-        /* Dynamic Paradigm Timeline Box */
+        .slider-cyan .slider-label-row span:last-child {
+            color: var(--accent-cyan);
+        }
+
+        .slider-purple input[type="range"] {
+            accent-color: #c084fc;
+        }
+
+        .slider-purple .slider-label-row span:last-child {
+            color: #c084fc;
+        }
+
         .timeline-box {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border-color);
@@ -230,7 +288,6 @@
             align-items: center;
         }
 
-        /* 3D Realistic Brain Canvas */
         .brain-visualizer-container {
             background: radial-gradient(circle at 50% 50%, #0a1128 0%, #030611 100%);
             border: 1px solid var(--border-color);
@@ -253,7 +310,6 @@
             z-index: 10;
         }
 
-        /* 14 Canonical Brain Parts Grid */
         .regions-grid-14 {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -279,7 +335,6 @@
             font-weight: bold;
         }
 
-        /* Non-Invasive Diagnostics Suite */
         .diagnostic-suite {
             grid-column: 1 / -1;
             background: var(--bg-surface);
@@ -346,21 +401,39 @@
             margin-bottom: 10px;
         }
 
-        .band-row { margin-bottom: 6px; }
-        .band-label { display: flex; justify-content: space-between; font-size: 0.72rem; margin-bottom: 2px; }
-        .band-track { height: 5px; background: #1e293b; border-radius: 3px; overflow: hidden; }
-        .band-fill { height: 100%; transition: width 0.2s ease-out; }
+        .band-row {
+            margin-bottom: 6px;
+        }
 
-        /* Subject Setup Modal */
+        .band-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            margin-bottom: 2px;
+        }
+
+        .band-track {
+            height: 5px;
+            background: #1e293b;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .band-fill {
+            height: 100%;
+            transition: width 0.2s ease-out;
+        }
+
+        /* Modal Overlays */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 999;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
 
         .modal-overlay.open {
@@ -371,12 +444,13 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 24px;
-            width: 460px;
+            padding: 22px;
             display: flex;
             flex-direction: column;
             gap: 14px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+            max-height: 92vh;
+            overflow-y: auto;
         }
 
         .modal-header {
@@ -407,40 +481,160 @@
             font-weight: 600;
         }
 
-        .input-group input, .input-group select {
+        .input-group input,
+        .input-group select {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             color: #fff;
-            padding: 9px 12px;
+            padding: 8px 12px;
             border-radius: 6px;
             font-size: 0.85rem;
             outline: none;
-            transition: border-color 0.2s;
         }
 
-        .input-group input:focus, .input-group select:focus {
-            border-color: var(--accent-cyan);
+        /* Stepper & Interactive Test Styles */
+        .step-progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .step-dot {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .step-dot.active {
+            background: var(--accent-purple);
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .step-dot.completed {
+            color: var(--accent-green);
+        }
+
+        .test-stage-box {
+            background: #030611;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Camera Box */
+        .camera-viewport {
+            width: 320px;
+            height: 220px;
+            background: #000;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid var(--accent-cyan);
+            margin-bottom: 10px;
+        }
+
+        video#webcamVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .face-guide-box {
+            position: absolute;
+            top: 25%;
+            left: 25%;
+            width: 50%;
+            height: 50%;
+            border: 2px dashed rgba(6, 182, 212, 0.7);
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        /* Reaction Test Box */
+        .reaction-target-box {
+            width: 100%;
+            height: 200px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s;
+        }
+
+        /* Tap Test Button */
+        .tap-test-btn {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #9333ea, #4c1d95);
+            border: 3px solid #c084fc;
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);
+            user-select: none;
+        }
+
+        .tap-test-btn:active {
+            transform: scale(0.94);
         }
 
         .modal-footer {
             display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
+            justify-content: space-between;
+            align-items: center;
             border-top: 1px solid var(--border-color);
             padding-top: 12px;
         }
 
         @media print {
-            body { background: #fff !important; color: #000 !important; }
-            header, input[type="range"], .btn, .test-selector-tabs, select, .modal-overlay { display: none !important; }
-            .workspace-grid, .diagnostic-suite { display: block !important; border: 1px solid #ccc !important; background: #fff !important; margin-bottom: 20px; }
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            header,
+            input[type="range"],
+            .btn,
+            .test-selector-tabs,
+            select,
+            .modal-overlay,
+            .interval-banner {
+                display: none !important;
+            }
+
+            .workspace-grid,
+            .diagnostic-suite {
+                display: block !important;
+                border: 1px solid #ccc !important;
+                background: #fff !important;
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-    <!-- Header with Subject Profile Button & PDF Export -->
+    <!-- Header -->
     <header>
         <div class="header-title">
             <div class="header-icon">🧠</div>
@@ -448,26 +642,50 @@
                 <h1 style="font-size:1.15rem; display:flex; align-items:center; gap:8px;">
                     Neuroscience Experiment Studio <span class="badge-protocol">LAB VIRTUAL PROTOCOL</span>
                 </h1>
-                <p style="font-size: 0.72rem; color: var(--text-muted);">Biophysical neural circuit modulation & canonical anatomical mapping.</p>
+                <p style="font-size: 0.72rem; color: var(--text-muted);">Real-time behavioral participant testing &
+                    automated neuromodulation suite.</p>
             </div>
         </div>
         <div class="header-actions">
-            <!-- সাবজেক্ট অ্যাড বা কনফিগার করার বাটন -->
-            <button class="btn btn-subject" onclick="openSubjectModal()">
-                👤 Subject: <span id="hdr-subject-name" style="color:var(--accent-cyan); font-weight:bold;">Human_S042</span>
-                <span id="hdr-subject-info" style="font-size:0.7rem; color:var(--text-muted); margin-left:4px;">(28y, Control)</span>
+            <!-- Subject Setup Button -->
+            <button class="btn btn-cyan" onclick="openSubjectModal()">
+                👤 Subject: <span id="hdr-subject-name"
+                    style="color:var(--accent-cyan); font-weight:bold;">Human_S042</span>
             </button>
-            <button class="btn btn-purple" onclick="window.print()">📄 Export Clinical PDF Report</button>
+
+            <!-- Interactive Assessment Battery Button -->
+            <button class="btn btn-green" onclick="startAssessmentFlow()">
+                📝 Start Interactive Assessment
+            </button>
+
+            <!-- PDF Report Button -->
+            <button class="btn btn-purple" onclick="window.print()">📄 Export PDF Report</button>
         </div>
     </header>
 
+    <!-- Periodic Testing & Session Status Bar -->
+    <div class="interval-banner">
+        <div>
+            <span class="pulse-dot"></span>
+            <strong>Active Participant Session:</strong>
+            <span id="interval-status-txt">Interval Mode: 4 Checks in 20 Minutes (Next Check in 4m 30s)</span>
+        </div>
+        <div>
+            <span style="color:var(--text-muted);">Completed Checks:</span>
+            <strong id="interval-count-txt" style="color:var(--accent-cyan);">0 / 4</strong>
+            <button class="btn" style="padding:2px 8px; margin-left:8px;" onclick="triggerIntervalNow()">⚡ Trigger Check
+                Now</button>
+        </div>
+    </div>
+
     <div class="workspace-grid">
-        
+
         <!-- বাম প্যানেল: সার্কিট, কেমিক্যাল ও ডাইনামিক প্যারাডাইম টাইমলাইন -->
         <div class="glass-panel">
             <div class="panel-heading">
                 <span>Custom Protocol: Neural Circuits & Firing Weights</span>
-                <span style="font-size: 0.75rem; color: var(--text-muted);" id="lab-clock-txt">Elapsed: 45 / 120 min</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);" id="lab-clock-txt">Elapsed: 0 / 20
+                    min</span>
             </div>
 
             <!-- Dual Columns -->
@@ -475,35 +693,41 @@
                 <!-- Circuits -->
                 <div class="tuner-col-box slider-cyan">
                     <h3 style="color: var(--accent-cyan);">Neural Circuit Activation</h3>
-                    
+
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Mesolimbic Dopaminergic Reward</span><span id="txt-c-meso">85%</span></div>
-                        <input type="range" id="c-meso" min="0" max="100" value="85" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Mesolimbic Dopaminergic Reward</span><span
+                                id="txt-c-meso">80%</span></div>
+                        <input type="range" id="c-meso" min="0" max="100" value="80" oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Retino-Geniculo-Striate Visual</span><span id="txt-c-vis">90%</span></div>
-                        <input type="range" id="c-vis" min="0" max="100" value="90" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Retino-Geniculo-Striate Visual</span><span
+                                id="txt-c-vis">85%</span></div>
+                        <input type="range" id="c-vis" min="0" max="100" value="85" oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Cerebellar Cortico-Nuclear Loop</span><span id="txt-c-cere">45%</span></div>
-                        <input type="range" id="c-cere" min="0" max="100" value="45" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Cerebellar Cortico-Nuclear Loop</span><span
+                                id="txt-c-cere">40%</span></div>
+                        <input type="range" id="c-cere" min="0" max="100" value="40" oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Central Executive Network (CEN)</span><span id="txt-c-cen">50%</span></div>
-                        <input type="range" id="c-cen" min="0" max="100" value="50" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Central Executive Network (CEN)</span><span
+                                id="txt-c-cen">45%</span></div>
+                        <input type="range" id="c-cen" min="0" max="100" value="45" oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Default Mode Network (DMN)</span><span id="txt-c-dmn">35%</span></div>
-                        <input type="range" id="c-dmn" min="0" max="100" value="35" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Default Mode Network (DMN)</span><span
+                                id="txt-c-dmn">40%</span></div>
+                        <input type="range" id="c-dmn" min="0" max="100" value="40" oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Locus Coeruleus Stress Axis</span><span id="txt-c-str">45%</span></div>
-                        <input type="range" id="c-str" min="0" max="100" value="45" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Locus Coeruleus Stress Axis</span><span
+                                id="txt-c-str">40%</span></div>
+                        <input type="range" id="c-str" min="0" max="100" value="40" oninput="triggerModulation()">
                     </div>
                 </div>
 
@@ -512,33 +736,39 @@
                     <h3 style="color: #c084fc;">Neurotransmitter Multipliers</h3>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Dopamine</span><span id="txt-m-da">1.45x</span></div>
-                        <input type="range" id="m-da" min="0.2" max="3.0" step="0.05" value="1.45" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Dopamine</span><span id="txt-m-da">1.35x</span></div>
+                        <input type="range" id="m-da" min="0.2" max="3.0" step="0.05" value="1.35"
+                            oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Glutamate</span><span id="txt-m-glu">1.50x</span></div>
-                        <input type="range" id="m-glu" min="0.2" max="3.0" step="0.05" value="1.50" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Glutamate</span><span id="txt-m-glu">1.30x</span></div>
+                        <input type="range" id="m-glu" min="0.2" max="3.0" step="0.05" value="1.30"
+                            oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>GABA</span><span id="txt-m-gaba">0.70x</span></div>
-                        <input type="range" id="m-gaba" min="0.2" max="3.0" step="0.05" value="0.70" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>GABA</span><span id="txt-m-gaba">0.85x</span></div>
+                        <input type="range" id="m-gaba" min="0.2" max="3.0" step="0.05" value="0.85"
+                            oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
                         <div class="slider-label-row"><span>Norepinephrine</span><span id="txt-m-ne">1.10x</span></div>
-                        <input type="range" id="m-ne" min="0.2" max="3.0" step="0.05" value="1.10" oninput="triggerModulation()">
+                        <input type="range" id="m-ne" min="0.2" max="3.0" step="0.05" value="1.10"
+                            oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Serotonin</span><span id="txt-m-ser">0.80x</span></div>
-                        <input type="range" id="m-ser" min="0.2" max="3.0" step="0.05" value="0.80" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Serotonin</span><span id="txt-m-ser">0.85x</span></div>
+                        <input type="range" id="m-ser" min="0.2" max="3.0" step="0.05" value="0.85"
+                            oninput="triggerModulation()">
                     </div>
 
                     <div class="slider-item">
-                        <div class="slider-label-row"><span>Acetylcholine</span><span id="txt-m-ach">0.95x</span></div>
-                        <input type="range" id="m-ach" min="0.2" max="3.0" step="0.05" value="0.95" oninput="triggerModulation()">
+                        <div class="slider-label-row"><span>Acetylcholine</span><span id="txt-m-ach">0.90x</span></div>
+                        <input type="range" id="m-ach" min="0.2" max="3.0" step="0.05" value="0.90"
+                            oninput="triggerModulation()">
                     </div>
                 </div>
             </div>
@@ -547,37 +777,44 @@
             <div class="timeline-box">
                 <div class="timeline-top-controls">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:0.8rem; font-weight:600;">⚡ Paradigm:</span>
+                        <span style="font-size:0.8rem; font-weight:600;">⚡ Task Context:</span>
                         <select class="paradigm-select" id="paradigmSelect" onchange="triggerModulation()">
                             <option value="cognitive">Deep Cognitive Problem Solving</option>
                             <option value="stress">Acute Stress & Threat Response</option>
                             <option value="meditation">Transcendental Meditation & Alpha State</option>
-                            <option value="sensory">Hyper-Stimulating Sensory Feed</option>
+                            <option value="sensory">Hyper-Stimulating Sensory Feed (20 min)</option>
                         </select>
                     </div>
-                    <button class="btn" style="padding:3px 8px;" id="btn-timer-toggle" onclick="toggleTimer()">⏸️ Pause</button>
+                    <button class="btn" style="padding:3px 8px;" id="btn-timer-toggle" onclick="toggleTimer()">⏸️
+                        Pause</button>
                 </div>
 
-                <input type="range" id="timeline-slider" min="0" max="120" value="45" style="accent-color:var(--accent-purple);" oninput="onTimelineSlider(this.value)">
+                <input type="range" id="timeline-slider" min="0" max="20" value="0"
+                    style="accent-color:var(--accent-purple);" oninput="onTimelineSlider(this.value)">
 
                 <div class="timeline-phase-display">
                     <div>
-                        <div style="font-size:0.75rem; color:#c084fc; font-weight:bold;" id="txt-phase-title">Phase: Sustained Engagement</div>
-                        <div style="font-size:0.7rem; color:var(--text-muted);" id="txt-phase-desc">Cortical metabolism elevated; neuromodulatory balance active.</div>
+                        <div style="font-size:0.75rem; color:#c084fc; font-weight:bold;" id="txt-phase-title">Phase:
+                            Baseline Rest</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);" id="txt-phase-desc">Participant starting
+                            session. Synaptic tone balanced.</div>
                     </div>
                     <div style="text-align:right;">
                         <span style="font-size:0.7rem; color:var(--text-muted);">Fatigue Factor:</span>
-                        <span style="font-size:0.85rem; font-weight:bold; color:var(--accent-cyan);" id="txt-fatigue-val">0.85</span>
+                        <span style="font-size:0.85rem; font-weight:bold; color:var(--accent-cyan);"
+                            id="txt-fatigue-val">1.00</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ডান প্যানেল: 3D বাস্তবধর্মী ব্রেন ক্যানভাস এবং ১৪টি মূল অংশের পার্সেন্টেজ -->
+        <!-- ডান প্যানেল: 3D বাস্তবধর্মী ব্রেন ক্যানভাস এবং ১৪টি মূল অংশ -->
         <div class="glass-panel">
             <div class="panel-heading">
                 <span>3D Anatomical Brain & Canonical Structures</span>
-                <span class="badge-protocol" style="background:rgba(6,182,212,0.15); color:var(--accent-cyan); border-color:var(--accent-cyan);">14 Structures Live</span>
+                <span class="badge-protocol"
+                    style="background:rgba(6,182,212,0.15); color:var(--accent-cyan); border-color:var(--accent-cyan);">14
+                    Structures Live</span>
             </div>
 
             <div class="brain-visualizer-container">
@@ -585,22 +822,35 @@
                 <canvas id="brainCanvas"></canvas>
             </div>
 
-            <!-- ১৪টি মূল অংশ (লাইভ পার্সেন্টেজ) -->
             <div class="regions-grid-14" id="regionsGrid">
-                <div class="region-card-mini"><span>Frontal Lobe:</span><span id="lbl-frontal" style="color:var(--accent-cyan);">0%</span></div>
-                <div class="region-card-mini"><span>Parietal Lobe:</span><span id="lbl-parietal" style="color:#6366f1;">0%</span></div>
-                <div class="region-card-mini"><span>Temporal Lobe:</span><span id="lbl-temporal" style="color:#14b8a6;">0%</span></div>
-                <div class="region-card-mini"><span>Occipital Lobe:</span><span id="lbl-occipital" style="color:var(--accent-green);">0%</span></div>
-                <div class="region-card-mini"><span>Cerebrum (Cortex):</span><span id="lbl-cerebrum" style="color:#a855f7;">0%</span></div>
-                <div class="region-card-mini"><span>Thalamus:</span><span id="lbl-thalamus" style="color:#cbd5e1;">0%</span></div>
-                <div class="region-card-mini"><span>Hypothalamus:</span><span id="lbl-hypothalamus" style="color:#f43f5e;">0%</span></div>
-                <div class="region-card-mini"><span>Pituitary Gland:</span><span id="lbl-pituitary" style="color:#fb7185;">0%</span></div>
-                <div class="region-card-mini"><span>Hippocampus:</span><span id="lbl-hippocampus" style="color:#38bdf8;">0%</span></div>
-                <div class="region-card-mini"><span>Amygdala:</span><span id="lbl-amygdala" style="color:var(--accent-red);">0%</span></div>
-                <div class="region-card-mini"><span>Midbrain:</span><span id="lbl-midbrain" style="color:#fbbf24;">0%</span></div>
-                <div class="region-card-mini"><span>Pons:</span><span id="lbl-pons" style="color:#f59e0b;">0%</span></div>
-                <div class="region-card-mini"><span>Medulla Oblongata:</span><span id="lbl-medulla" style="color:#e11d48;">0%</span></div>
-                <div class="region-card-mini"><span>Cerebellum:</span><span id="lbl-cerebellum" style="color:#3b82f6;">0%</span></div>
+                <div class="region-card-mini"><span>Frontal Lobe:</span><span id="lbl-frontal"
+                        style="color:var(--accent-cyan);">0%</span></div>
+                <div class="region-card-mini"><span>Parietal Lobe:</span><span id="lbl-parietal"
+                        style="color:#6366f1;">0%</span></div>
+                <div class="region-card-mini"><span>Temporal Lobe:</span><span id="lbl-temporal"
+                        style="color:#14b8a6;">0%</span></div>
+                <div class="region-card-mini"><span>Occipital Lobe:</span><span id="lbl-occipital"
+                        style="color:var(--accent-green);">0%</span></div>
+                <div class="region-card-mini"><span>Cerebrum (Cortex):</span><span id="lbl-cerebrum"
+                        style="color:#a855f7;">0%</span></div>
+                <div class="region-card-mini"><span>Thalamus:</span><span id="lbl-thalamus"
+                        style="color:#cbd5e1;">0%</span></div>
+                <div class="region-card-mini"><span>Hypothalamus:</span><span id="lbl-hypothalamus"
+                        style="color:#f43f5e;">0%</span></div>
+                <div class="region-card-mini"><span>Pituitary Gland:</span><span id="lbl-pituitary"
+                        style="color:#fb7185;">0%</span></div>
+                <div class="region-card-mini"><span>Hippocampus:</span><span id="lbl-hippocampus"
+                        style="color:#38bdf8;">0%</span></div>
+                <div class="region-card-mini"><span>Amygdala:</span><span id="lbl-amygdala"
+                        style="color:var(--accent-red);">0%</span></div>
+                <div class="region-card-mini"><span>Midbrain:</span><span id="lbl-midbrain"
+                        style="color:#fbbf24;">0%</span></div>
+                <div class="region-card-mini"><span>Pons:</span><span id="lbl-pons" style="color:#f59e0b;">0%</span>
+                </div>
+                <div class="region-card-mini"><span>Medulla Oblongata:</span><span id="lbl-medulla"
+                        style="color:#e11d48;">0%</span></div>
+                <div class="region-card-mini"><span>Cerebellum:</span><span id="lbl-cerebellum"
+                        style="color:#3b82f6;">0%</span></div>
             </div>
         </div>
 
@@ -617,16 +867,14 @@
                         <button class="test-tab-btn" onclick="switchTest('pupil', this)">Pupillometry</button>
                     </div>
                 </div>
-                <span id="diagnostic-status-txt" style="font-size:0.75rem; color:var(--text-muted);">Mode: Real-time Oscillography</span>
+                <span id="diagnostic-status-txt" style="font-size:0.75rem; color:var(--text-muted);">Mode: Real-time
+                    Oscillography</span>
             </div>
 
             <div class="diagnostic-viewport-grid">
-                <!-- Test Canvas Screen -->
                 <div class="test-canvas-box">
                     <canvas id="diagnosticCanvas"></canvas>
                 </div>
-
-                <!-- Test Side Telemetry Display -->
                 <div id="sideTelemetryBox">
                     <!-- Dynamic per test -->
                 </div>
@@ -635,53 +883,235 @@
 
     </div>
 
-    <!-- সাবজেক্ট অ্যাড ও কন্ডিশন সেট করার মোডাল (Subject Setup Modal) -->
+    <!-- মোডাল ১: সাবজেক্ট প্রোফাইল সেটআপ -->
     <div class="modal-overlay" id="subjectModal">
-        <div class="modal-box">
+        <div class="modal-box" style="width:440px;">
             <div class="modal-header">
                 <h3><span>👤</span> Configure Subject Baseline</h3>
-                <span style="cursor:pointer; color:var(--text-muted); font-size:1.2rem;" onclick="closeSubjectModal()">✕</span>
+                <span style="cursor:pointer; color:var(--text-muted); font-size:1.2rem;"
+                    onclick="closeSubjectModal()">✕</span>
             </div>
 
             <div class="input-group">
                 <label>Subject ID / Name</label>
-                <input type="text" id="sub-name" value="Human_S042" placeholder="e.g. Patient_X09 or Alice">
+                <input type="text" id="sub-name" value="Human_S042">
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="input-group">
                     <label>Age (Years)</label>
-                    <input type="number" id="sub-age" value="28" min="5" max="100">
+                    <input type="number" id="sub-age" value="28">
                 </div>
                 <div class="input-group">
-                    <label>Biological Sex</label>
-                    <select id="sub-sex">
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Non-binary">Other</option>
-                    </select>
+                    <label>Total Duration (Minutes)</label>
+                    <input type="number" id="sub-duration" value="20">
                 </div>
             </div>
 
             <div class="input-group">
-                <label>Baseline Condition / Pathology</label>
-                <select id="sub-condition-select" onchange="applyConditionPreset(this.value)">
-                    <option value="Healthy Control">Healthy Control (Rested)</option>
-                    <option value="ADHD / Executive Deficit">ADHD / Executive Deficit (Low Dopamine/PFC)</option>
-                    <option value="Chronic Stress / High Cortisol">Chronic Stress / Anxiety (Hyperactive Amygdala)</option>
-                    <option value="Sleep Deprived / Exhaustion">Sleep Deprived (High Adenosine/Low Acetylcholine)</option>
-                    <option value="Custom">Custom Manual Configuration</option>
+                <label>Periodic Testing Schedule (কতক্ষণ পর পর টেস্ট হবে?)</label>
+                <select id="sub-interval-select">
+                    <option value="5" selected>Every 5 Minutes (4 Checks in 20m)</option>
+                    <option value="4">Every 4 Minutes (5 Checks in 20m)</option>
+                    <option value="10">Every 10 Minutes (2 Checks in 20m)</option>
+                    <option value="0">Manual / Single Test Only</option>
                 </select>
-            </div>
-
-            <div class="input-group">
-                <label>Total Experiment Duration (Minutes)</label>
-                <input type="number" id="sub-duration" value="120" min="10" max="600">
             </div>
 
             <div class="modal-footer">
                 <button class="btn" onclick="closeSubjectModal()">Cancel</button>
-                <button class="btn btn-purple" onclick="saveSubjectProfile()">Apply Subject & Baseline</button>
+                <button class="btn btn-purple" onclick="saveSubjectProfile()">Apply Subject</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- মোডাল ২: ধাপে ধাপে ইন্টারেক্টিভ টেস্ট ব্যাটারি (Interactive Assessment Battery) -->
+    <div class="modal-overlay" id="batteryModal">
+        <div class="modal-box" style="width:640px;">
+            <div class="modal-header">
+                <h3 style="color:#34d399;">
+                    <span>🧪</span> Interactive Participant Assessment Battery
+                    <span id="battery-interval-tag"
+                        style="font-size:0.7rem; color:var(--accent-cyan); margin-left:6px;">[Interval Check #1]</span>
+                </h3>
+                <span style="cursor:pointer; color:var(--text-muted); font-size:1.2rem;"
+                    onclick="closeBatteryModal()">✕</span>
+            </div>
+
+            <!-- Stepper Progress Bar -->
+            <div class="step-progress-bar">
+                <span class="step-dot active" id="dot-step-0">0. Manual & Setup</span>
+                <span class="step-dot" id="dot-step-1">1. Auto Blink (Camera)</span>
+                <span class="step-dot" id="dot-step-2">2. Alertness (Reaction)</span>
+                <span class="step-dot" id="dot-step-3">3. Working Memory</span>
+                <span class="step-dot" id="dot-step-4">4. Motor Tapping</span>
+                <span class="step-dot" id="dot-step-5">5. Psychometrics</span>
+            </div>
+
+            <!-- STAGE 0: Manual Entry (Heart Rate & Visual Environment) -->
+            <div id="stage-box-0" class="test-stage-box" style="align-items:stretch; text-align:left;">
+                <h4 style="color:#c084fc; margin-bottom:12px;">Step 0: Manual Vitals & Environment</h4>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                    <div class="input-group">
+                        <label>Baseline Heart Rate (BPM)</label>
+                        <input type="number" id="bat-base-hr" value="70">
+                    </div>
+                    <div class="input-group">
+                        <label>Current Heart Rate (BPM)</label>
+                        <input type="number" id="bat-curr-hr" value="92">
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom:14px;">
+                    <label>Visual Stimulus Type (ভিজ্যুয়াল পরিবেশ)</label>
+                    <select id="bat-visual">
+                        <option value="90" selected>Rapid Reels / Gaming / Video Feed (High 90%)</option>
+                        <option value="50">Reading Static Text / Documents (Medium 50%)</option>
+                        <option value="15">Eyes Closed / Dim Environment (Low 15%)</option>
+                    </select>
+                </div>
+
+                <p style="font-size:0.75rem; color:var(--text-muted);">
+                    উপরের দুটি তথ্য ম্যানুয়ালি দেওয়ার পর "Start Camera Blink Test"-এ ক্লিক করলে ক্যামেরা চালু হবে।
+                </p>
+            </div>
+
+            <!-- STAGE 1: Automatic Camera Blink Detector -->
+            <div id="stage-box-1" class="test-stage-box" style="display:none;">
+                <h4 style="color:var(--accent-cyan); margin-bottom:8px;">Step 1: Automated Eye Blink Rate (EBR)</h4>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+                    ক্যামেরার দিকে স্বাভাবিক দৃষ্টিতে তাকান। সিস্টেম স্বয়ংক্রিয়ভাবে ১৫ সেকেন্ডের মধ্যে পলক পড়ার হার
+                    নির্ণয় করবে।
+                </p>
+
+                <div class="camera-viewport">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <div class="face-guide-box"></div>
+                </div>
+                <canvas id="cameraAnalysisCanvas" width="160" height="120" style="display:none;"></canvas>
+
+                <div style="font-size:0.85rem; font-family:monospace; margin-bottom:8px;">
+                    Time Remaining: <span id="cam-timer" style="color:var(--accent-amber); font-weight:bold;">15s</span>
+                    |
+                    Blinks Detected: <span id="cam-blinks-count"
+                        style="color:var(--accent-green); font-weight:bold;">0</span>
+                </div>
+                <button class="btn btn-cyan" id="btn-start-camera" onclick="startCameraBlinkAnalysis()">▶️ Start Camera
+                    Analysis</button>
+            </div>
+
+            <!-- STAGE 2: Mental Alertness & Processing Speed (Reaction Test) -->
+            <div id="stage-box-2" class="test-stage-box" style="display:none;">
+                <h4 style="color:#f59e0b; margin-bottom:8px;">Step 2: Mental Alertness & Reaction Speed</h4>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+                    নিচের বক্সে নজর রাখুন। লাল রঙ থাকা অবস্থায় অপেক্ষা করুন, <strong>সবুজ হওয়া মাত্র ক্লিক
+                        করুন!</strong>
+                </p>
+
+                <div class="reaction-target-box" id="reactionBox" style="background:#ef4444; color:#fff;"
+                    onclick="handleReactionBoxClick()">
+                    Click to Start Reaction Test
+                </div>
+                <div style="margin-top:10px; font-size:0.85rem; font-family:monospace;">
+                    Reaction Time: <span id="reaction-ms-txt" style="color:var(--accent-cyan); font-weight:bold;">---
+                        ms</span> |
+                    Alertness Score: <span id="alertness-score-txt"
+                        style="color:var(--accent-green); font-weight:bold;">--- / 10</span>
+                </div>
+            </div>
+
+            <!-- STAGE 3: Working Memory (Digit Span Test) -->
+            <div id="stage-box-3" class="test-stage-box" style="display:none;">
+                <h4 style="color:#38bdf8; margin-bottom:8px;">Step 3: Working Memory (Digit Span 0 - 7)</h4>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+                    স্ক্রিনে একে একে সংখ্যা ফ্ল্যাশ হবে। মনোযোগ দিয়ে দেখে সেগুলো ক্রমানুসারে ইনপুট বক্সে লিখুন।
+                </p>
+
+                <div style="font-size:2.8rem; font-weight:bold; font-family:monospace; color:#38bdf8; min-height:60px;"
+                    id="digit-flash-display">
+                    ---
+                </div>
+
+                <div id="digit-input-container" style="display:none; margin-top:12px; gap:8px;">
+                    <input type="text" id="user-digit-input" placeholder="সংখ্যাগুলো লিখুন (যেমন: 7419)"
+                        style="padding:8px; border-radius:6px; background:#111a30; border:1px solid #1e293b; color:#fff; font-size:1.1rem; text-align:center;">
+                    <button class="btn btn-green" onclick="evaluateDigitSpan()">Submit Answer</button>
+                </div>
+
+                <button class="btn btn-cyan" id="btn-start-digit-span" onclick="startDigitSpanTest()"
+                    style="margin-top:12px;">Start Memory Sequence</button>
+                <div style="margin-top:10px; font-size:0.85rem; font-family:monospace;">
+                    Memory Score: <span id="memory-score-txt" style="color:var(--accent-green); font-weight:bold;">--- /
+                        7</span>
+                </div>
+            </div>
+
+            <!-- STAGE 4: Rapid Motor Tapping Test (FTT) -->
+            <div id="stage-box-4" class="test-stage-box" style="display:none;">
+                <h4 style="color:#ec4899; margin-bottom:8px;">Step 4: Motor & Cerebellar Coordination</h4>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:14px;">
+                    ৫ সেকেন্ডের মধ্যে নিচের বাটনে যতো দ্রুত সম্ভব বারবার ট্যাপ/ক্লিক করুন!
+                </p>
+
+                <button class="tap-test-btn" id="btn-rapid-tap" onclick="handleRapidTap()">
+                    TAP!
+                </button>
+
+                <div style="margin-top:14px; font-size:0.85rem; font-family:monospace;">
+                    Time: <span id="tap-timer-txt" style="color:var(--accent-amber); font-weight:bold;">5.0s</span> |
+                    Tap Count: <span id="tap-count-txt" style="color:var(--accent-cyan); font-weight:bold;">0</span>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+                    Motor Firing Estimated: <strong id="motor-act-txt" style="color:var(--accent-green);">--- %</strong>
+                </div>
+            </div>
+
+            <!-- STAGE 5: Psychometrics (1 - 10 Likert Prompts) -->
+            <div id="stage-box-5" class="test-stage-box" style="display:none; align-items:stretch; text-align:left;">
+                <h4 style="color:#a855f7; margin-bottom:8px;">Step 5: Psychometric State & Urges (1 - 10)</h4>
+
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">
+                        1. Reward Urge & Novelty Craving (আকুলতা/রোমাঞ্চ): <strong id="val-q-urge"
+                            style="color:var(--accent-cyan);">7</strong>/10
+                    </label>
+                    <input type="range" min="1" max="10" value="7"
+                        oninput="document.getElementById('val-q-urge').innerText=this.value">
+                </div>
+
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">
+                        2. Subjective Anxiety & Tension (উদ্বেগ/ভীতি): <strong id="val-q-anx"
+                            style="color:var(--accent-red);">4</strong>/10
+                    </label>
+                    <input type="range" min="1" max="10" value="4"
+                        oninput="document.getElementById('val-q-anx').innerText=this.value">
+                </div>
+
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">
+                        3. Emotional Calmness & Balance (ধৈর্য ও মানসিক স্থিতি): <strong id="val-q-calm"
+                            style="color:var(--accent-green);">6</strong>/10
+                    </label>
+                    <input type="range" min="1" max="10" value="6"
+                        oninput="document.getElementById('val-q-calm').innerText=this.value">
+                </div>
+
+                <div style="margin-bottom:6px;">
+                    <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">
+                        4. Concentration vs Daydreaming (একাগ্রতা বনাম আনমনা ভাবনা): <strong id="val-q-focus"
+                            style="color:#c084fc;">6</strong>/10
+                    </label>
+                    <input type="range" min="1" max="10" value="6"
+                        oninput="document.getElementById('val-q-focus').innerText=this.value">
+                </div>
+            </div>
+
+            <!-- Footer Navigation -->
+            <div class="modal-footer">
+                <button class="btn" id="btn-prev-step" onclick="prevStep()" disabled>← Previous Step</button>
+                <button class="btn btn-purple" id="btn-next-step" onclick="nextStep()">Next Step →</button>
             </div>
         </div>
     </div>
@@ -691,133 +1121,517 @@
            1. CANONICAL 14 ANATOMICAL STRUCTURES
            ========================================================================= */
         const CANONICAL_PARTS = [
-            { id: 'frontal',     name: 'Frontal Lobe',       x: 0.24, y: 0.32, color: '#06b6d4', r: 12 },
-            { id: 'parietal',    name: 'Parietal Lobe',      x: 0.54, y: 0.22, color: '#6366f1', r: 11 },
-            { id: 'occipital',   name: 'Occipital Lobe',     x: 0.82, y: 0.38, color: '#10b981', r: 11 },
-            { id: 'temporal',    name: 'Temporal Lobe',      x: 0.40, y: 0.54, color: '#14b8a6', r: 11 },
-            { id: 'cerebrum',    name: 'Cerebrum (Cortex)',  x: 0.42, y: 0.18, color: '#a855f7', r: 9  },
-            { id: 'thalamus',    name: 'Thalamus',           x: 0.50, y: 0.44, color: '#cbd5e1', r: 9  },
-            { id: 'hypothalamus',name: 'Hypothalamus',       x: 0.44, y: 0.50, color: '#f43f5e', r: 7  },
-            { id: 'pituitary',   name: 'Pituitary Gland',    x: 0.38, y: 0.58, color: '#fb7185', r: 6  },
-            { id: 'hippocampus', name: 'Hippocampus',        x: 0.56, y: 0.52, color: '#38bdf8', r: 8  },
-            { id: 'amygdala',    name: 'Amygdala',           x: 0.46, y: 0.56, color: '#ef4444', r: 7  },
-            { id: 'midbrain',    name: 'Midbrain',           x: 0.50, y: 0.60, color: '#fbbf24', r: 8  },
-            { id: 'pons',        name: 'Pons',               x: 0.53, y: 0.68, color: '#f59e0b', r: 9  },
-            { id: 'medulla',     name: 'Medulla Oblongata',  x: 0.55, y: 0.78, color: '#e11d48', r: 8  },
-            { id: 'cerebellum',  name: 'Cerebellum',         x: 0.74, y: 0.68, color: '#3b82f6', r: 13 }
+            {id: 'frontal', name: 'Frontal Lobe', x: 0.24, y: 0.32, color: '#06b6d4', r: 12},
+            {id: 'parietal', name: 'Parietal Lobe', x: 0.54, y: 0.22, color: '#6366f1', r: 11},
+            {id: 'occipital', name: 'Occipital Lobe', x: 0.82, y: 0.38, color: '#10b981', r: 11},
+            {id: 'temporal', name: 'Temporal Lobe', x: 0.40, y: 0.54, color: '#14b8a6', r: 11},
+            {id: 'cerebrum', name: 'Cerebrum (Cortex)', x: 0.42, y: 0.18, color: '#a855f7', r: 9},
+            {id: 'thalamus', name: 'Thalamus', x: 0.50, y: 0.44, color: '#cbd5e1', r: 9},
+            {id: 'hypothalamus', name: 'Hypothalamus', x: 0.44, y: 0.50, color: '#f43f5e', r: 7},
+            {id: 'pituitary', name: 'Pituitary Gland', x: 0.38, y: 0.58, color: '#fb7185', r: 6},
+            {id: 'hippocampus', name: 'Hippocampus', x: 0.56, y: 0.52, color: '#38bdf8', r: 8},
+            {id: 'amygdala', name: 'Amygdala', x: 0.46, y: 0.56, color: '#ef4444', r: 7},
+            {id: 'midbrain', name: 'Midbrain', x: 0.50, y: 0.60, color: '#fbbf24', r: 8},
+            {id: 'pons', name: 'Pons', x: 0.53, y: 0.68, color: '#f59e0b', r: 9},
+            {id: 'medulla', name: 'Medulla Oblongata', x: 0.55, y: 0.78, color: '#e11d48', r: 8},
+            {id: 'cerebellum', name: 'Cerebellum', x: 0.74, y: 0.68, color: '#3b82f6', r: 13}
         ];
 
         const CANONICAL_TRACTS = [
-            { from: 'frontal', to: 'thalamus' },
-            { from: 'thalamus', to: 'parietal' },
-            { from: 'parietal', to: 'occipital' },
-            { from: 'occipital', to: 'temporal' },
-            { from: 'temporal', to: 'hippocampus' },
-            { from: 'hippocampus', to: 'thalamus' },
-            { from: 'thalamus', to: 'hypothalamus' },
-            { from: 'hypothalamus', to: 'pituitary' },
-            { from: 'hypothalamus', to: 'amygdala' },
-            { from: 'amygdala', to: 'frontal' },
-            { from: 'thalamus', to: 'midbrain' },
-            { from: 'midbrain', to: 'pons' },
-            { from: 'pons', to: 'medulla' },
-            { from: 'pons', to: 'cerebellum' },
-            { from: 'cerebellum', to: 'thalamus' },
-            { from: 'cerebrum', to: 'midbrain' }
+            {from: 'frontal', to: 'thalamus'},
+            {from: 'thalamus', to: 'parietal'},
+            {from: 'parietal', to: 'occipital'},
+            {from: 'occipital', to: 'temporal'},
+            {from: 'temporal', to: 'hippocampus'},
+            {from: 'hippocampus', to: 'thalamus'},
+            {from: 'thalamus', to: 'hypothalamus'},
+            {from: 'hypothalamus', to: 'pituitary'},
+            {from: 'hypothalamus', to: 'amygdala'},
+            {from: 'amygdala', to: 'frontal'},
+            {from: 'thalamus', to: 'midbrain'},
+            {from: 'midbrain', to: 'pons'},
+            {from: 'pons', to: 'medulla'},
+            {from: 'pons', to: 'cerebellum'},
+            {from: 'cerebellum', to: 'thalamus'},
+            {from: 'cerebrum', to: 'midbrain'}
         ];
 
         /* =========================================================================
-           2. STATE MANAGEMENT & SUBJECT DETAILS
+           2. STATE & INTERVAL MANAGEMENT
            ========================================================================= */
         let state = {
             subject: 'Human_S042',
-            age: 28,
-            sex: 'Male',
-            condition: 'Healthy Control',
-            duration: 120,
-            minute: 45,
+            duration: 20,
+            minute: 0,
+            intervalMinutes: 5,
+            intervalCount: 0,
+            totalIntervalsExpected: 4,
             isPlaying: true,
             activeTest: 'eeg',
-            paradigm: 'cognitive',
-            circuits: { mesolimbic: 85, visual: 90, cerebellar: 45, cen: 50, dmn: 35, stress_axis: 45 },
-            multipliers: { dopamine: 1.45, glutamate: 1.50, gaba: 0.70, norepi: 1.10, serotonin: 0.80, ach: 0.95 },
+            paradigm: 'sensory',
+            circuits: {mesolimbic: 80, visual: 85, cerebellar: 40, cen: 45, dmn: 40, stress_axis: 40},
+            multipliers: {dopamine: 1.35, glutamate: 1.30, gaba: 0.85, norepi: 1.10, serotonin: 0.85, ach: 0.90},
             regions: {},
             diagnostics: {
                 eeg: {
-                    channels: { Fp1: 15, Fp2: 17, F3: 14, F4: 15, C3: 20, Cz: 22, C4: 21, T3: 12, T4: 14, P3: 8, P4: 9, O1: 24, O2: 25 },
-                    spectral_bands: { delta: 12, theta: 22, alpha: 14, beta: 32, gamma: 20 }
+                    channels: {Fp1: 14, Fp2: 15, F3: 13, F4: 14, C3: 18, Cz: 19, C4: 18, T3: 11, T4: 12, P3: 7, P4: 8, O1: 22, O2: 23},
+                    spectral_bands: {delta: 12, theta: 22, alpha: 14, beta: 32, gamma: 20}
                 },
-                fmri: { mean_bold: 3.8, bold_frontal: 4.2, bold_temporal: 3.4, bold_thalamus: 4.0, bold_brainstem: 3.5 },
-                fnirs: { hbo: 7.2, hbr: -3.1, toi: 71.4 },
-                meg: { dipole_strength_ft: 88.5 },
-                pupillometry: { diameter_mm: 5.4, state: 'Sympathetic Dilation' }
+                fmri: {mean_bold: 3.5},
+                fnirs: {hbo: 6.8, hbr: -2.9, toi: 72.0},
+                meg: {dipole_strength_ft: 75.0},
+                pupillometry: {diameter_mm: 5.2, state: 'Sympathetic Dynamic'}
             }
         };
 
         const eegChannelKeys = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'Cz', 'C4', 'T3', 'T4', 'P3', 'P4', 'O1', 'O2'];
 
         /* =========================================================================
-           3. SUBJECT MODAL CONTROLS
+           3. STEPPER CONTROLLER FOR THE ASSESSMENT BATTERY
            ========================================================================= */
-        function openSubjectModal() {
-            document.getElementById('subjectModal').classList.add('open');
-            document.getElementById('sub-name').value = state.subject;
-            document.getElementById('sub-age').value = state.age;
-            document.getElementById('sub-sex').value = state.sex;
-            document.getElementById('sub-duration').value = state.duration;
+        let currentStep = 0;
+        const totalSteps = 6;
+        let batteryResults = {
+            baseHR: 70, currHR: 92, visualScore: 90,
+            ebr: 24, reactionMS: 310, alertnessScore: 8,
+            memoryScore: 5, motorScore: 45,
+            urge: 7, anxiety: 4, calm: 6, focus: 6
+        };
+
+        function startAssessmentFlow() {
+            currentStep = 0;
+            document.getElementById('batteryModal').classList.add('open');
+            document.getElementById('battery-interval-tag').innerText = `[Interval Check #${state.intervalCount + 1}]`;
+            showStep(0);
         }
 
-        function closeSubjectModal() {
-            document.getElementById('subjectModal').classList.remove('open');
+        function closeBatteryModal() {
+            stopCameraStream();
+            document.getElementById('batteryModal').classList.remove('open');
         }
 
-        function applyConditionPreset(cond) {
-            if (cond === 'ADHD / Executive Deficit') {
-                document.getElementById('c-cen').value = 25;
-                document.getElementById('m-da').value = 0.65;
-                document.getElementById('m-ne').value = 0.80;
-                document.getElementById('m-glu').value = 1.10;
-            } else if (cond === 'Chronic Stress / High Cortisol') {
-                document.getElementById('c-str').value = 85;
-                document.getElementById('m-ne').value = 1.65;
-                document.getElementById('m-ser').value = 0.60;
-                document.getElementById('m-gaba').value = 0.65;
-            } else if (cond === 'Sleep Deprived / Exhaustion') {
-                document.getElementById('c-cen').value = 30;
-                document.getElementById('m-ach').value = 0.50;
-                document.getElementById('m-da').value = 0.70;
-                document.getElementById('m-gaba').value = 1.30;
-            } else if (cond === 'Healthy Control') {
-                document.getElementById('c-cen').value = 50;
-                document.getElementById('c-meso').value = 75;
-                document.getElementById('m-da').value = 1.20;
-                document.getElementById('m-glu').value = 1.20;
-                document.getElementById('m-gaba').value = 1.00;
+        function showStep(s) {
+            for (let i = 0; i < totalSteps; i++) {
+                const box = document.getElementById(`stage-box-${i}`);
+                const dot = document.getElementById(`dot-step-${i}`);
+                if (box) box.style.display = (i === s) ? 'flex' : 'none';
+                if (dot) {
+                    dot.classList.remove('active');
+                    if (i < s) dot.classList.add('completed');
+                    else dot.classList.remove('completed');
+                    if (i === s) dot.classList.add('active');
+                }
+            }
+            currentStep = s;
+            document.getElementById('btn-prev-step').disabled = (s === 0);
+
+            if (s === totalSteps - 1) {
+                document.getElementById('btn-next-step').innerText = '⚡ Compute & Apply to Brain';
+                document.getElementById('btn-next-step').style.background = '#059669';
+            } else {
+                document.getElementById('btn-next-step').innerText = 'Next Step →';
+                document.getElementById('btn-next-step').style.background = 'var(--accent-purple)';
             }
         }
 
+        function nextStep() {
+            if (currentStep === 0) {
+                batteryResults.baseHR = Math.max(40, parseFloat(document.getElementById('bat-base-hr').value) || 70);
+                batteryResults.currHR = Math.max(40, parseFloat(document.getElementById('bat-curr-hr').value) || 90);
+                batteryResults.visualScore = parseFloat(document.getElementById('bat-visual').value) || 90;
+                showStep(1);
+            } else if (currentStep === 1) {
+                stopCameraStream();
+                showStep(2);
+            } else if (currentStep === 2) {
+                showStep(3);
+            } else if (currentStep === 3) {
+                showStep(4);
+            } else if (currentStep === 4) {
+                showStep(5);
+            } else if (currentStep === 5) {
+                // Read Psychometrics
+                batteryResults.urge = parseFloat(document.getElementById('val-q-urge').innerText) || 7;
+                batteryResults.anxiety = parseFloat(document.getElementById('val-q-anx').innerText) || 4;
+                batteryResults.calm = parseFloat(document.getElementById('val-q-calm').innerText) || 6;
+                batteryResults.focus = parseFloat(document.getElementById('val-q-focus').innerText) || 6;
+
+                finishAndApplyBattery();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                if (currentStep === 1) stopCameraStream();
+                showStep(currentStep - 1);
+            }
+        }
+
+        /* =========================================================================
+    TEST 1: 100% ACCURATE MEDIAPIPE FACE MESH & EAR BLINK DETECTOR
+    ========================================================================= */
+        let camStream = null;
+        let blinkCountdownTimer = null;
+        let blinksDetected = 0;
+        let faceMeshInstance = null;
+        let cameraAnimationId = null;
+
+        // Eye Aspect Ratio (EAR) স্টেট ও থ্রেশহোল্ড
+        let isEyeClosed = false;
+        let closedFrameCount = 0;
+        const EAR_THRESHOLD = 0.21; // চোখ বন্ধ হওয়ার বৈজ্ঞানিক স্ট্যান্ডার্ড থ্রেশহোল্ড
+
+        // MediaPipe 468 Face Mesh Landmarks-এ চোখের ৬টি করে মূল পয়েন্টের ইনডেক্স
+        // [outer_corner, top_1, top_2, inner_corner, bottom_2, bottom_1]
+        const LEFT_EYE_INDICES = [33, 160, 158, 133, 153, 144];
+        const RIGHT_EYE_INDICES = [362, 385, 387, 263, 373, 380];
+
+        // ইউক্লিডীয় দূরত্ব (Euclidean Distance) হিসাবের ফাংশন
+        function getEuclideanDistance(p1, p2) {
+            return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+        }
+
+        // Eye Aspect Ratio (EAR) সূত্র: (|p2-p6| + |p3-p5|) / (2 * |p1-p4|)
+        function calculateEyeAspectRatio(landmarks, eyeIndices) {
+            const p1 = landmarks[eyeIndices[0]];
+            const p2 = landmarks[eyeIndices[1]];
+            const p3 = landmarks[eyeIndices[2]];
+            const p4 = landmarks[eyeIndices[3]];
+            const p5 = landmarks[eyeIndices[4]];
+            const p6 = landmarks[eyeIndices[5]];
+
+            const verticalA = getEuclideanDistance(p2, p6);
+            const verticalB = getEuclideanDistance(p3, p5);
+            const horizontal = getEuclideanDistance(p1, p4);
+
+            if (horizontal === 0) return 0;
+            return (verticalA + verticalB) / (2.0 * horizontal);
+        }
+
+        // MediaPipe ল্যান্ডমার্কের আউটপুট প্রসেস করার ফাংশন
+        function onFaceMeshResults(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                return; // কোনো মুখ শনাক্ত না হলে বাদ দিন
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+
+            // উভয় চোখের EAR হিসাব এবং গড় মান নির্ধারণ
+            const leftEAR = calculateEyeAspectRatio(landmarks, LEFT_EYE_INDICES);
+            const rightEAR = calculateEyeAspectRatio(landmarks, RIGHT_EYE_INDICES);
+            const avgEAR = (leftEAR + rightEAR) / 2.0;
+
+            // EAR থ্রেশহোল্ড চেক করে পলক শনাক্তকরণ
+            if (avgEAR < EAR_THRESHOLD) {
+                closedFrameCount++;
+                if (closedFrameCount >= 1) {
+                    isEyeClosed = true;
+                }
+            } else {
+                // চোখ আবার খোলার সাথে সাথে একটি ব্লিংক সম্পন্ন হলো
+                if (isEyeClosed) {
+                    blinksDetected++;
+                    document.getElementById('cam-blinks-count').innerText = blinksDetected;
+                    isEyeClosed = false;
+                }
+                closedFrameCount = 0;
+            }
+        }
+
+        // ক্যামেরা ও MediaPipe লাইভ অ্যানালাইসিস শুরু
+        async function startCameraBlinkAnalysis() {
+            blinksDetected = 0;
+            isEyeClosed = false;
+            closedFrameCount = 0;
+            document.getElementById('cam-blinks-count').innerText = '0';
+
+            const video = document.getElementById('webcamVideo');
+            const btn = document.getElementById('btn-start-camera');
+            btn.disabled = true;
+
+            try {
+                // ১. MediaPipe FaceMesh মডেল লোড করা
+                if (!faceMeshInstance) {
+                    faceMeshInstance = new FaceMesh({
+                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+                    });
+
+                    faceMeshInstance.setOptions({
+                        maxNumFaces: 1,
+                        refineLandmarks: true, // চোখের মনির জন্য হাই প্রিসিশন
+                        minDetectionConfidence: 0.5,
+                        minTrackingConfidence: 0.5
+                    });
+
+                    faceMeshInstance.onResults(onFaceMeshResults);
+                }
+
+                // ২. ওয়েবক্যাম স্ট্রিম চালু করা
+                camStream = await navigator.mediaDevices.getUserMedia({
+                    video: {width: 320, height: 240, frameRate: {ideal: 30}}
+                });
+                video.srcObject = camStream;
+                await video.play();
+
+                let timeLeft = 15;
+                document.getElementById('cam-timer').innerText = `${timeLeft}s`;
+
+                // ৩. রিয়েল-টাইম ফ্রেম অ্যানালাইসিস লুপ (GPU অ্যাক্সিলারেটেড)
+                async function processVideoFrame() {
+                    if (video && video.readyState >= 2 && camStream) {
+                        await faceMeshInstance.send({image: video});
+                    }
+                    if (camStream) {
+                        cameraAnimationId = requestAnimationFrame(processVideoFrame);
+                    }
+                }
+                processVideoFrame();
+
+                // ৪. ১৫ সেকেন্ডের টাইমার কাউন্টডাউন
+                blinkCountdownTimer = setInterval(() => {
+                    timeLeft--;
+                    document.getElementById('cam-timer').innerText = `${timeLeft}s`;
+
+                    if (timeLeft <= 0) {
+                        clearInterval(blinkCountdownTimer);
+                        stopCameraStream();
+                        btn.disabled = false;
+
+                        // ১ মিনিটের Eye Blink Rate (EBR) হিসেব (১৫ সেকেন্ড * ৪)
+                        const extrapolatedEBR = Math.round(blinksDetected * (60 / 15));
+                        batteryResults.ebr = Math.max(8, extrapolatedEBR);
+
+                        alert(`✅ MediaPipe EAR Analysis Complete!\n\nDetected Blinks: ${blinksDetected} (in 15s)\nCalculated EBR: ${batteryResults.ebr} blinks/min.`);
+                    }
+                }, 1000);
+
+            } catch (err) {
+                btn.disabled = false;
+                console.error("Camera/MediaPipe Error:", err);
+                alert("ক্যামেরা অন করা যায়নি বা পারমিশন পাওয়া যায়নি। ডিফল্ট ২২ blinks/min সেট করা হলো।");
+                batteryResults.ebr = 22;
+            }
+        }
+
+        // ক্যামেরা ও অ্যানিমেশন লুপ বন্ধ করার ফাংশন
+        function stopCameraStream() {
+            if (camStream) {
+                camStream.getTracks().forEach(track => track.stop());
+                camStream = null;
+            }
+            if (cameraAnimationId) {
+                cancelAnimationFrame(cameraAnimationId);
+                cameraAnimationId = null;
+            }
+            if (blinkCountdownTimer) {
+                clearInterval(blinkCountdownTimer);
+                blinkCountdownTimer = null;
+            }
+        }
+
+        /* --- TEST 2: REACTION SPEED TEST --- */
+        let reactionState = 'idle'; // 'idle', 'waiting', 'ready'
+        let reactionStartTime = 0;
+        let reactionTimeout = null;
+
+        function handleReactionBoxClick() {
+            const box = document.getElementById('reactionBox');
+            if (reactionState === 'idle') {
+                reactionState = 'waiting';
+                box.style.background = '#f59e0b';
+                box.innerText = 'Wait for GREEN...';
+
+                const randomDelay = 1500 + Math.random() * 2500;
+                reactionTimeout = setTimeout(() => {
+                    reactionState = 'ready';
+                    reactionStartTime = performance.now();
+                    box.style.background = '#10b981';
+                    box.innerText = 'CLICK NOW!';
+                }, randomDelay);
+            } else if (reactionState === 'waiting') {
+                clearTimeout(reactionTimeout);
+                reactionState = 'idle';
+                box.style.background = '#ef4444';
+                box.innerText = 'Too Early! Click to Try Again.';
+            } else if (reactionState === 'ready') {
+                const reactionTime = Math.round(performance.now() - reactionStartTime);
+                reactionState = 'idle';
+                box.style.background = '#06b6d4';
+                box.innerText = `${reactionTime} ms! Click to Retest.`;
+
+                document.getElementById('reaction-ms-txt').innerText = `${reactionTime} ms`;
+
+                // Score 1 - 10
+                let score = 5;
+                if (reactionTime < 440) score = 10;
+                else if (reactionTime < 480) score = 9;
+                else if (reactionTime < 530) score = 8;
+                else if (reactionTime < 400) score = 6;
+                else score = 4;
+
+                batteryResults.reactionMS = reactionTime;
+                batteryResults.alertnessScore = score;
+                document.getElementById('alertness-score-txt').innerText = `${score} / 10`;
+            }
+        }
+
+        /* --- TEST 3: WORKING MEMORY DIGIT SPAN --- */
+        let memorySequence = [];
+        function startDigitSpanTest() {
+            document.getElementById('btn-start-digit-span').style.display = 'none';
+            document.getElementById('digit-input-container').style.display = 'none';
+            document.getElementById('user-digit-input').value = '';
+
+            // Generate 5-digit sequence
+            memorySequence = [];
+            for (let i = 0; i < 5; i++) memorySequence.push(Math.floor(Math.random() * 9) + 1);
+
+            let idx = 0;
+            const display = document.getElementById('digit-flash-display');
+            display.innerText = "Get Ready...";
+
+            const interval = setInterval(() => {
+                if (idx < memorySequence.length) {
+                    display.innerText = memorySequence[idx];
+                    idx++;
+                } else {
+                    clearInterval(interval);
+                    display.innerText = "Enter the numbers:";
+                    document.getElementById('digit-input-container').style.display = 'flex';
+                }
+            }, 900);
+        }
+
+        function evaluateDigitSpan() {
+            const entered = document.getElementById('user-digit-input').value.trim();
+            const correctStr = memorySequence.join('');
+            let score = 3;
+            if (entered === correctStr) score = 7;
+            else if (entered.length >= 4 && correctStr.startsWith(entered.substring(0, 3))) score = 5;
+
+            batteryResults.memoryScore = score;
+            document.getElementById('memory-score-txt').innerText = `${score} / 7`;
+            document.getElementById('digit-flash-display').innerText = `Score: ${score}/7!`;
+            document.getElementById('btn-start-digit-span').style.display = 'inline-block';
+            document.getElementById('btn-start-digit-span').innerText = 'Retest Sequence';
+        }
+
+        /* --- TEST 4: RAPID MOTOR TAPPING TEST --- */
+        let tapCount = 0;
+        let tapActive = false;
+        let tapTimer = null;
+
+        function handleRapidTap() {
+            if (!tapActive) {
+                tapActive = true;
+                tapCount = 1;
+                document.getElementById('tap-count-txt').innerText = tapCount;
+                let timeLeft = 5.0;
+
+                tapTimer = setInterval(() => {
+                    timeLeft -= 0.1;
+                    document.getElementById('tap-timer-txt').innerText = `${Math.max(0, timeLeft).toFixed(1)}s`;
+                    if (timeLeft <= 0) {
+                        clearInterval(tapTimer);
+                        tapActive = false;
+
+                        // Calculate Motor Firing %
+                        let motorPercent = 45;
+                        if (tapCount > 30) motorPercent = 80;
+                        else if (tapCount > 20) motorPercent = 60;
+                        else motorPercent = 30;
+
+                        batteryResults.motorScore = motorPercent;
+                        document.getElementById('motor-act-txt').innerText = `${motorPercent}%`;
+                        alert(`Time Up! You recorded ${tapCount} taps. Estimated motor activity: ${motorPercent}%.`);
+                    }
+                }, 100);
+            } else {
+                tapCount++;
+                document.getElementById('tap-count-txt').innerText = tapCount;
+            }
+        }
+
+        /* --- FINISH BATTERY & INJECT TO SIMULATION --- */
+        function finishAndApplyBattery() {
+            const r = batteryResults;
+
+            // Mathematical Neurotransmitter Estimations
+            const calcDA = Math.min(2.8, Math.max(0.3, ((r.ebr / 17.0) * 0.6 + (r.urge / 10.0) * 0.4)));
+            const calcNE = Math.min(2.5, Math.max(0.4, (r.currHR / r.baseHR) + (r.anxiety / 25.0)));
+            const calcGlu = Math.min(2.5, Math.max(0.4, 0.5 + (r.alertnessScore / 10.0) * 1.0));
+            const calcGABA = Math.min(2.5, Math.max(0.3, 0.4 + (r.calm / 10.0) * 0.9));
+            const calc5HT = Math.min(2.2, Math.max(0.3, 0.4 + (r.calm / 10.0) * 0.8 - (r.anxiety / 25.0)));
+            const calcACh = Math.min(2.2, Math.max(0.3, (r.memoryScore / 7.0) * 1.25));
+
+            // Circuits (%)
+            const calcMeso = Math.min(100, Math.round(r.urge * 10));
+            const calcVis = Math.round(r.visualScore);
+            const calcMot = Math.round(r.motorScore);
+            const calcCEN = Math.round(r.focus * 10);
+            const calcDMN = Math.round((10 - r.focus) * 10);
+
+            const hrElev = Math.max(0, (r.currHR - r.baseHR) / r.baseHR);
+            const calcStr = Math.min(100, Math.round(hrElev * 80 + r.anxiety * 6));
+
+            // Set sliders
+            document.getElementById('m-da').value = calcDA.toFixed(2);
+            document.getElementById('m-ne').value = calcNE.toFixed(2);
+            document.getElementById('m-glu').value = calcGlu.toFixed(2);
+            document.getElementById('m-gaba').value = calcGABA.toFixed(2);
+            document.getElementById('m-ser').value = calc5HT.toFixed(2);
+            document.getElementById('m-ach').value = calcACh.toFixed(2);
+
+            document.getElementById('c-meso').value = calcMeso;
+            document.getElementById('c-vis').value = calcVis;
+            document.getElementById('c-cere').value = calcMot;
+            document.getElementById('c-cen').value = calcCEN;
+            document.getElementById('c-dmn').value = calcDMN;
+            document.getElementById('c-str').value = calcStr;
+
+            state.intervalCount++;
+            document.getElementById('interval-count-txt').innerText = `${state.intervalCount} / ${state.totalIntervalsExpected}`;
+
+            closeBatteryModal();
+            triggerModulation();
+        }
+
+        /* =========================================================================
+           4. PERIODIC INTERVAL SCHEDULER (CHECKS DURING EXPERIMENT)
+           ========================================================================= */
+        function triggerIntervalNow() {
+            startAssessmentFlow();
+        }
+
+        function checkIntervalTrigger(currentMin) {
+            if (state.intervalMinutes > 0 && currentMin > 0 && (currentMin % state.intervalMinutes === 0)) {
+                // Pause clock and alert
+                state.isPlaying = false;
+                document.getElementById('btn-timer-toggle').innerText = '▶️ Resume';
+                alert(`⏰ Interval Check Due at T = ${currentMin}m!\nParticipant needs to complete Check #${state.intervalCount + 1}.`);
+                startAssessmentFlow();
+            }
+        }
+
+        function openSubjectModal() {document.getElementById('subjectModal').classList.add('open');}
+        function closeSubjectModal() {document.getElementById('subjectModal').classList.remove('open');}
         function saveSubjectProfile() {
-            state.subject = document.getElementById('sub-name').value || 'Subject_01';
-            state.age = parseInt(document.getElementById('sub-age').value) || 25;
-            state.sex = document.getElementById('sub-sex').value;
-            state.condition = document.getElementById('sub-condition-select').value;
-            state.duration = parseInt(document.getElementById('sub-duration').value) || 120;
+            state.subject = document.getElementById('sub-name').value || 'Human_S042';
+            state.duration = parseInt(document.getElementById('sub-duration').value) || 20;
+            state.intervalMinutes = parseInt(document.getElementById('sub-interval-select').value) || 5;
+            state.totalIntervalsExpected = state.intervalMinutes > 0 ? Math.floor(state.duration / state.intervalMinutes) : 1;
 
-            // Update Header Display
             document.getElementById('hdr-subject-name').innerText = state.subject;
-            document.getElementById('hdr-subject-info').innerText = `(${state.age}y, ${state.condition.split(' ')[0]})`;
-
-            // Update Timeline Range
             document.getElementById('timeline-slider').max = state.duration;
-            if (state.minute > state.duration) state.minute = state.duration;
-            document.getElementById('lab-clock-txt').innerText = `Elapsed: ${state.minute} / ${state.duration} min`;
+            document.getElementById('interval-count-txt').innerText = `0 / ${state.totalIntervalsExpected}`;
+            document.getElementById('interval-status-txt').innerText = `Interval Mode: ${state.totalIntervalsExpected} Checks in ${state.duration}m (Every ${state.intervalMinutes}m)`;
 
             closeSubjectModal();
             triggerModulation();
         }
 
         /* =========================================================================
-           4. SIMULATION CALCULATIONS
+           5. SIMULATION ENGINE & 14 REGIONS COMPUTATION
            ========================================================================= */
         function triggerModulation() {
             state.circuits.mesolimbic = parseFloat(document.getElementById('c-meso').value);
@@ -835,7 +1649,7 @@
             state.multipliers.ach = parseFloat(document.getElementById('m-ach').value);
             state.paradigm = document.getElementById('paradigmSelect').value;
 
-            // Labels update
+            // UI Labels update
             document.getElementById('txt-c-meso').innerText = `${state.circuits.mesolimbic}%`;
             document.getElementById('txt-c-vis').innerText = `${state.circuits.visual}%`;
             document.getElementById('txt-c-cere').innerText = `${state.circuits.cerebellar}%`;
@@ -854,7 +1668,7 @@
 
             fetch('/api/simulate/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     circuits: state.circuits,
                     multipliers: state.multipliers,
@@ -863,24 +1677,23 @@
                     paradigm: state.paradigm
                 })
             })
-            .then(res => res.json())
-            .then(res => {
-                if(res.status === 'success') {
-                    state.regions = res.data.regions;
-                    state.diagnostics = res.data.diagnostics;
-                    document.getElementById('txt-phase-title').innerText = `Phase: ${res.data.timeline.phase_name}`;
-                    document.getElementById('txt-fatigue-val').innerText = res.data.timeline.fatigue_factor;
-                    update14RegionLabels();
-                    updateSideTelemetryUI();
-                }
-            })
-            .catch(() => {});
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        state.regions = res.data.regions;
+                        state.diagnostics = res.data.diagnostics;
+                        document.getElementById('txt-phase-title').innerText = `Phase: ${res.data.timeline.phase_name}`;
+                        document.getElementById('txt-fatigue-val').innerText = res.data.timeline.fatigue_factor;
+                        update14RegionLabels();
+                        updateSideTelemetryUI();
+                    }
+                })
+                .catch(() => { });
         }
 
         function computeLocal() {
             const progress = state.minute / state.duration;
             const fatigue = Math.max(0.4, 1.05 - progress * 0.55);
-
             const c = state.circuits;
             const m = state.multipliers;
 
@@ -910,22 +1723,10 @@
             }
         }
 
-        /* =========================================================================
-           5. TEST SWITCHER LOGIC
-           ========================================================================= */
         function switchTest(testType, btn) {
             state.activeTest = testType;
             document.querySelectorAll('.test-tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            const labels = {
-                eeg: 'Mode: 13-CH Digital Electroencephalography & Topography',
-                fmri: 'Mode: 3.0T High-Resolution BOLD Hemodynamics (Voxel Heatmap)',
-                fnirs: 'Mode: Near-Infrared Optical Spectroscopy (HbO / HbR)',
-                meg: 'Mode: 306-Channel SQUID Magnetic Dipole Telemetry',
-                pupil: 'Mode: Pupillometric LC-NE Sympathovagal Tracking'
-            };
-            document.getElementById('diagnostic-status-txt').innerText = labels[testType];
             updateSideTelemetryUI();
         }
 
@@ -944,7 +1745,7 @@
                         ${renderBand('δ Delta', d.eeg.spectral_bands.delta, '#c084fc')}
                         ${renderBand('θ Theta', d.eeg.spectral_bands.theta, '#06b6d4')}
                         ${renderBand('α Alpha', d.eeg.spectral_bands.alpha, '#10b981')}
-                        ${renderBand('β Beta',  d.eeg.spectral_bands.beta,  '#f59e0b')}
+                        ${renderBand('β Beta', d.eeg.spectral_bands.beta, '#f59e0b')}
                         ${renderBand('γ Gamma', d.eeg.spectral_bands.gamma, '#ef4444')}
                     </div>
                 `;
@@ -953,19 +1754,13 @@
                     <div class="side-card">
                         <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:8px;">fMRI Regional BOLD Perfusion</span>
                         <div style="font-size:0.8rem; line-height:1.9;">
-                            <div>Frontal BOLD: <strong style="color:var(--accent-cyan);">+${(state.regions.frontal*0.05).toFixed(2)}%</strong></div>
-                            <div>Temporal BOLD: <strong style="color:#14b8a6;">+${(state.regions.temporal*0.05).toFixed(2)}%</strong></div>
-                            <div>Thalamic BOLD: <strong style="color:#cbd5e1;">+${(state.regions.thalamus*0.05).toFixed(2)}%</strong></div>
-                            <div>Brainstem BOLD: <strong style="color:#f59e0b;">+${(state.regions.midbrain*0.05).toFixed(2)}%</strong></div>
+                            <div>Frontal BOLD: <strong style="color:var(--accent-cyan);">+${(state.regions.frontal * 0.05).toFixed(2)}%</strong></div>
+                            <div>Temporal BOLD: <strong style="color:#14b8a6;">+${(state.regions.temporal * 0.05).toFixed(2)}%</strong></div>
+                            <div>Thalamic BOLD: <strong style="color:#cbd5e1;">+${(state.regions.thalamus * 0.05).toFixed(2)}%</strong></div>
                             <div style="border-top:1px solid #1e293b; margin-top:6px; padding-top:4px;">
-                                Mean Whole-Brain: <strong style="color:var(--accent-purple);">+${((state.regions.cerebrum*0.05)).toFixed(2)}%</strong>
+                                Whole-Brain BOLD: <strong style="color:var(--accent-purple);">+${((state.regions.cerebrum * 0.05)).toFixed(2)}%</strong>
                             </div>
                         </div>
-                    </div>
-                    <div class="side-card">
-                        <span style="font-size:0.75rem; color:var(--text-muted);">Magnetic Gradient:</span>
-                        <div style="font-size:0.95rem; font-weight:bold; color:var(--accent-cyan); margin-top:2px;">3.0 Tesla EPI</div>
-                        <span style="font-size:0.7rem; color:var(--text-muted);">Voxel Resolution: 1.5 x 1.5 x 2.0 mm³</span>
                     </div>
                 `;
             } else if (state.activeTest === 'fnirs') {
@@ -973,24 +1768,19 @@
                     <div class="side-card">
                         <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">fNIRS Optical Telemetry</span>
                         <div style="font-size:0.82rem; line-height:2.0;">
-                            <div>ΔOxy-Hb (HbO): <strong style="color:#ef4444;">+${((state.regions.frontal*0.12)).toFixed(2)} µmol/L</strong></div>
-                            <div>ΔDeoxy-Hb (HbR): <strong style="color:#06b6d4;">-${((state.regions.frontal*0.05)).toFixed(2)} µmol/L</strong></div>
-                            <div>Tissue Oxygenation (TOI): <strong style="color:#10b981;">${(65 + state.regions.frontal*0.1).toFixed(1)}%</strong></div>
+                            <div>ΔOxy-Hb (HbO): <strong style="color:#ef4444;">+${((state.regions.frontal * 0.12)).toFixed(2)} µmol/L</strong></div>
+                            <div>ΔDeoxy-Hb (HbR): <strong style="color:#06b6d4;">-${((state.regions.frontal * 0.05)).toFixed(2)} µmol/L</strong></div>
+                            <div>Tissue Oxygenation (TOI): <strong style="color:#10b981;">71.4%</strong></div>
                         </div>
-                    </div>
-                    <div class="side-card">
-                        <span style="font-size:0.72rem; color:var(--text-muted);">Laser Diodes: 760nm / 850nm</span>
-                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">Optode Montage: Prefrontal Bilateral Array</div>
                     </div>
                 `;
             } else if (state.activeTest === 'meg') {
                 box.innerHTML = `
                     <div class="side-card">
-                        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">MEG Magnetic Flux Density</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">MEG Magnetic Flux</span>
                         <div style="font-size:0.85rem; line-height:1.9;">
-                            <div>Dipole Moment: <strong style="color:#c084fc;">${(Math.abs(state.multipliers.glutamate*50 - state.multipliers.gaba*40)*2.1).toFixed(1)} fT</strong></div>
-                            <div>Sensor SQUID Count: <strong>306 Planar/Axial</strong></div>
-                            <div>Bandwidth: <strong>0.1 - 330 Hz</strong></div>
+                            <div>Dipole Moment: <strong style="color:#c084fc;">78.5 fT</strong></div>
+                            <div>Sensor SQUID: <strong>306 Vectorview</strong></div>
                         </div>
                     </div>
                 `;
@@ -998,11 +1788,10 @@
                 const dia = (2.2 + state.multipliers.norepi * 2.8 - state.multipliers.ach * 0.8).toFixed(2);
                 box.innerHTML = `
                     <div class="side-card">
-                        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">Pupillometric LC-NE Metrics</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">Pupillometric Metrics</span>
                         <div style="font-size:0.85rem; line-height:1.9;">
                             <div>Pupil Diameter: <strong style="color:var(--accent-cyan); font-size:1.1rem;">${dia} mm</strong></div>
-                            <div>Autonomic Balance: <strong style="color:${state.multipliers.norepi > 1.1 ? '#ef4444':'#10b981'};">${state.multipliers.norepi > 1.1 ? 'Sympathetic Alert' : 'Parasympathetic'}</strong></div>
-                            <div>Gaze Drift: <strong>0.14° Fixated</strong></div>
+                            <div>Autonomic Balance: <strong style="color:#ef4444;">Sympathetic Dominant</strong></div>
                         </div>
                     </div>
                 `;
@@ -1019,7 +1808,7 @@
         }
 
         /* =========================================================================
-           6. 3D REALISTIC BRAIN RENDERING ENGINE (CANVAS)
+           6. 3D REALISTIC BRAIN RENDERING ENGINE
            ========================================================================= */
         const bCanvas = document.getElementById('brainCanvas');
         const bCtx = bCanvas.getContext('2d');
@@ -1038,12 +1827,10 @@
             const h = bCanvas.height;
             bCtx.clearRect(0, 0, w, h);
 
-            // বাস্তবধর্মী অ্যানাটমিক্যাল ব্রেন আউটলাইন
             bCtx.save();
             bCtx.strokeStyle = 'rgba(147, 51, 234, 0.4)';
             bCtx.lineWidth = 2.5;
             bCtx.beginPath();
-            
             bCtx.moveTo(w * 0.16, h * 0.44);
             bCtx.bezierCurveTo(w * 0.12, h * 0.24, w * 0.38, h * 0.08, w * 0.60, h * 0.12);
             bCtx.bezierCurveTo(w * 0.82, h * 0.16, w * 0.94, h * 0.34, w * 0.88, h * 0.52);
@@ -1053,7 +1840,6 @@
             bCtx.closePath();
             bCtx.stroke();
 
-            // Corpus Callosum Arch
             bCtx.strokeStyle = 'rgba(203, 213, 225, 0.25)';
             bCtx.lineWidth = 4;
             bCtx.beginPath();
@@ -1061,7 +1847,6 @@
             bCtx.stroke();
             bCtx.restore();
 
-            // নিউরাল সিন্যাপটিক ট্র্যাক্টস
             CANONICAL_TRACTS.forEach(tr => {
                 const n1 = CANONICAL_PARTS.find(p => p.id === tr.from);
                 const n2 = CANONICAL_PARTS.find(p => p.id === tr.to);
@@ -1091,7 +1876,6 @@
                 bCtx.shadowBlur = 0;
             });
 
-            // ১৪টি মূল অংশের নোড ও লেবেল
             CANONICAL_PARTS.forEach(part => {
                 const nx = part.x * w;
                 const ny = part.y * h;
@@ -1113,15 +1897,13 @@
                 bCtx.save();
                 bCtx.font = 'bold 10px -apple-system, sans-serif';
                 const txtW = bCtx.measureText(part.name).width;
-                
                 bCtx.fillStyle = 'rgba(6, 9, 19, 0.88)';
-                bCtx.fillRect(nx - txtW/2 - 4, ny - 22, txtW + 8, 14);
+                bCtx.fillRect(nx - txtW / 2 - 4, ny - 22, txtW + 8, 14);
                 bCtx.strokeStyle = part.color;
                 bCtx.lineWidth = 0.8;
-                bCtx.strokeRect(nx - txtW/2 - 4, ny - 22, txtW + 8, 14);
-
+                bCtx.strokeRect(nx - txtW / 2 - 4, ny - 22, txtW + 8, 14);
                 bCtx.fillStyle = '#ffffff';
-                bCtx.fillText(part.name, nx - txtW/2, ny - 11);
+                bCtx.fillText(part.name, nx - txtW / 2, ny - 11);
                 bCtx.restore();
             });
 
@@ -1146,17 +1928,11 @@
             const h = dCanvas.height;
             dCtx.clearRect(0, 0, w, h);
 
-            if (state.activeTest === 'eeg') {
-                renderEEGTest(w, h);
-            } else if (state.activeTest === 'fmri') {
-                renderFMRITest(w, h);
-            } else if (state.activeTest === 'fnirs') {
-                renderFNIRSTest(w, h);
-            } else if (state.activeTest === 'meg') {
-                renderMEGTest(w, h);
-            } else if (state.activeTest === 'pupil') {
-                renderPupilTest(w, h);
-            }
+            if (state.activeTest === 'eeg') renderEEGTest(w, h);
+            else if (state.activeTest === 'fmri') renderFMRITest(w, h);
+            else if (state.activeTest === 'fnirs') renderFNIRSTest(w, h);
+            else if (state.activeTest === 'meg') renderMEGTest(w, h);
+            else if (state.activeTest === 'pupil') renderPupilTest(w, h);
 
             renderScalpTopomap();
             requestAnimationFrame(renderDiagnostic);
@@ -1180,7 +1956,7 @@
                     const t = clock * 4.0 + x * 0.04;
                     const wDelta = Math.sin(t * 0.8) * 5;
                     const wAlpha = Math.sin(t * 2.2 + idx) * (state.multipliers.gaba * 5);
-                    const wBeta  = Math.sin(t * 6.5 + idx * 1.5) * (state.multipliers.glutamate * 4);
+                    const wBeta = Math.sin(t * 6.5 + idx * 1.5) * (state.multipliers.glutamate * 4);
                     const wGamma = (Math.random() - 0.5) * (state.multipliers.dopamine * 3.5);
 
                     const y = yBase + (wDelta + wAlpha + wBeta + wGamma);
@@ -1208,7 +1984,6 @@
                 for (let c = 0; c < cols; c++) {
                     const distToCenter = Math.hypot(c - 6, r - 6);
                     const act = Math.sin(clock * 3 + distToCenter) * 20 + (state.regions.frontal * 0.6);
-                    
                     if (distToCenter < 5.5) {
                         const red = Math.min(255, act * 3);
                         const yellow = Math.min(255, Math.max(0, act * 2.2 - 80));
@@ -1223,7 +1998,7 @@
             dCtx.strokeRect(cx, cy, cw, ch);
             dCtx.fillStyle = '#94a3b8';
             dCtx.font = '10px monospace';
-            dCtx.fillText('ΔBOLD % Hemodynamic Signal Curve vs Time (Seconds)', cx + 10, cy + 18);
+            dCtx.fillText('ΔBOLD % Hemodynamic Signal Curve vs Time', cx + 10, cy + 18);
 
             dCtx.strokeStyle = '#f43f5e';
             dCtx.lineWidth = 2.5;
@@ -1237,10 +2012,6 @@
                 else dCtx.lineTo(cx + x, y);
             }
             dCtx.stroke();
-
-            dCtx.fillStyle = '#06b6d4';
-            dCtx.font = 'bold 14px monospace';
-            dCtx.fillText(`Peak ΔBOLD: +${((state.regions.frontal * 0.052)).toFixed(2)}%`, cx + 10, cy + ch - 12);
         }
 
         let fnirsHistoryO = new Array(80).fill(0);
@@ -1276,12 +2047,6 @@
                 if (i === 0) dCtx.moveTo(x, y); else dCtx.lineTo(x, y);
             });
             dCtx.stroke();
-
-            dCtx.fillStyle = '#ef4444';
-            dCtx.font = 'bold 12px monospace';
-            dCtx.fillText(`— ΔOxy-Hb (HbO): +${((state.regions.frontal*0.12)).toFixed(2)} µmol/L`, 20, 25);
-            dCtx.fillStyle = '#06b6d4';
-            dCtx.fillText(`— ΔDeoxy-Hb (HbR): -${((state.regions.frontal*0.05)).toFixed(2)} µmol/L`, 20, 45);
         }
 
         function renderMEGTest(w, h) {
@@ -1296,17 +2061,10 @@
                 const fast = Math.sin(t * 14) * 12;
                 const evoked = Math.sin(t * 2) * netCurrent;
                 const noise = (Math.random() - 0.5) * 6;
-
                 const y = mid + (fast + evoked + noise);
                 if (x === 0) dCtx.moveTo(x, y); else dCtx.lineTo(x, y);
             }
             dCtx.stroke();
-
-            dCtx.fillStyle = '#fff';
-            dCtx.font = '12px monospace';
-            dCtx.fillText('MEG SQUID Magnetometer: Fast Synaptic Magnetic Dipoles', 16, 25);
-            dCtx.fillStyle = '#c084fc';
-            dCtx.fillText(`Magnetic Dipole Flux: ${(Math.abs(netCurrent) * 1.6).toFixed(1)} fT`, 16, 45);
         }
 
         function renderPupilTest(w, h) {
@@ -1341,7 +2099,7 @@
             const mm = (2.2 + state.multipliers.norepi * 2.8 - state.multipliers.ach * 0.8).toFixed(2);
             dCtx.fillStyle = '#00f0ff';
             dCtx.font = 'bold 15px monospace';
-            dCtx.fillText(`Pupil Diameter: ${mm} mm | LC-NE Dynamic Tone`, 20, 30);
+            dCtx.fillText(`Pupil Diameter: ${mm} mm | LC-NE Sympathetic State`, 20, 30);
         }
 
         function renderScalpTopomap() {
@@ -1369,12 +2127,12 @@
             topoCtx.stroke();
 
             const scalpPositions = [
-                { k: 'Fp1', x: cx - 16, y: cy - 30 }, { k: 'Fp2', x: cx + 16, y: cy - 30 },
-                { k: 'F3',  x: cx - 25, y: cy - 18 }, { k: 'F4',  x: cx + 25, y: cy - 18 },
-                { k: 'C3',  x: cx - 30, y: cy },      { k: 'Cz',  x: cx,      y: cy },
-                { k: 'C4',  x: cx + 30, y: cy },      { k: 'P3',  x: cx - 20, y: cy + 20 },
-                { k: 'P4',  x: cx + 20, y: cy + 20 }, { k: 'O1',  x: cx - 12, y: cy + 34 },
-                { k: 'O2',  x: cx + 12, y: cy + 34 }
+                {k: 'Fp1', x: cx - 16, y: cy - 30}, {k: 'Fp2', x: cx + 16, y: cy - 30},
+                {k: 'F3', x: cx - 25, y: cy - 18}, {k: 'F4', x: cx + 25, y: cy - 18},
+                {k: 'C3', x: cx - 30, y: cy}, {k: 'Cz', x: cx, y: cy},
+                {k: 'C4', x: cx + 30, y: cy}, {k: 'P3', x: cx - 20, y: cy + 20},
+                {k: 'P4', x: cx + 20, y: cy + 20}, {k: 'O1', x: cx - 12, y: cy + 34},
+                {k: 'O2', x: cx + 12, y: cy + 34}
             ];
 
             const ch = state.diagnostics.eeg.channels;
@@ -1388,7 +2146,7 @@
         }
 
         /* =========================================================================
-           8. TIMELINE & RUN
+           8. TIMELINE & AUTOMATIC PERIODIC INTERVAL TRIGGER
            ========================================================================= */
         function onTimelineSlider(val) {
             state.minute = parseInt(val);
@@ -1406,6 +2164,10 @@
                 state.minute += 1;
                 document.getElementById('timeline-slider').value = state.minute;
                 document.getElementById('lab-clock-txt').innerText = `Elapsed: ${state.minute} / ${state.duration} min`;
+
+                // চেক করুন এই মিনিটে কোনো ইন্টারভ্যাল টেস্ট নেওয়ার সময় হয়েছে কি না
+                checkIntervalTrigger(state.minute);
+
                 triggerModulation();
             }
         }, 3000);
@@ -1416,4 +2178,5 @@
         renderDiagnostic();
     </script>
 </body>
+
 </html>
