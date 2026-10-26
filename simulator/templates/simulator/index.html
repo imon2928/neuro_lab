@@ -354,6 +354,7 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             width: fit-content;
+            flex-wrap: wrap;
         }
 
         .test-tab-btn {
@@ -562,7 +563,6 @@
             pointer-events: none;
         }
 
-        /* Reaction Test Box */
         .reaction-target-box {
             width: 100%;
             height: 200px;
@@ -577,7 +577,6 @@
             transition: background 0.1s;
         }
 
-        /* Tap Test Button */
         .tap-test-btn {
             width: 130px;
             height: 130px;
@@ -640,7 +639,7 @@
             <div class="header-icon">🧠</div>
             <div>
                 <h1 style="font-size:1.15rem; display:flex; align-items:center; gap:8px;">
-                   NeuroLab <span class="badge-protocol">VIRTUAL LAB </span>
+                    NeuroLab <span class="badge-protocol">VIRTUAL LAB </span>
                 </h1>
                 <p style="font-size: 0.72rem; color: var(--text-muted);">Real-time behavioral participant testing &
                     automated neuromodulation suite.</p>
@@ -854,7 +853,7 @@
             </div>
         </div>
 
-        <!-- সম্পূর্ণ নিচের প্যানেল: সম্পূর্ণ নন-ইনভেসিভ টেস্ট স্যুট -->
+        <!-- সম্পূর্ণ নিচের প্যানেল: সম্পূর্ণ নন-ইনভেসিভ টেস্ট স্যুট (৬টি টেস্ট) -->
         <div class="diagnostic-suite">
             <div class="panel-heading">
                 <div style="display:flex; align-items:center; gap:12px;">
@@ -862,9 +861,10 @@
                     <div class="test-selector-tabs">
                         <button class="test-tab-btn active" onclick="switchTest('eeg', this)">13-CH EEG</button>
                         <button class="test-tab-btn" onclick="switchTest('fmri', this)">fMRI (BOLD)</button>
+                        <button class="test-tab-btn" onclick="switchTest('pet', this)">PET Scan</button>
+                        <button class="test-tab-btn" onclick="switchTest('mri', this)">Structural MRI</button>
                         <button class="test-tab-btn" onclick="switchTest('fnirs', this)">fNIRS</button>
                         <button class="test-tab-btn" onclick="switchTest('meg', this)">MEG Dipole</button>
-                        <button class="test-tab-btn" onclick="switchTest('pupil', this)">Pupillometry</button>
                     </div>
                 </div>
                 <span id="diagnostic-status-txt" style="font-size:0.75rem; color:var(--text-muted);">Mode: Real-time
@@ -925,7 +925,7 @@
         </div>
     </div>
 
-    <!-- মোডাল ২: ধাপে ধাপে ইন্টারেক্টিভ টেস্ট ব্যাটারি (Interactive Assessment Battery) -->
+    <!-- মোডাল ২: ধাপে ধাপে ইন্টারেক্টিভ টেস্ট ব্যাটারি -->
     <div class="modal-overlay" id="batteryModal">
         <div class="modal-box" style="width:640px;">
             <div class="modal-header">
@@ -948,7 +948,7 @@
                 <span class="step-dot" id="dot-step-5">5. Psychometrics</span>
             </div>
 
-            <!-- STAGE 0: Manual Entry (Heart Rate & Visual Environment) -->
+            <!-- STAGE 0: Manual Entry -->
             <div id="stage-box-0" class="test-stage-box" style="align-items:stretch; text-align:left;">
                 <h4 style="color:#c084fc; margin-bottom:12px;">Step 0: Manual Vitals & Environment</h4>
 
@@ -1001,7 +1001,7 @@
                     Analysis</button>
             </div>
 
-            <!-- STAGE 2: Mental Alertness & Processing Speed (Reaction Test) -->
+            <!-- STAGE 2: Reaction Speed Test -->
             <div id="stage-box-2" class="test-stage-box" style="display:none;">
                 <h4 style="color:#f59e0b; margin-bottom:8px;">Step 2: Mental Alertness & Reaction Speed</h4>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
@@ -1157,7 +1157,7 @@
         ];
 
         /* =========================================================================
-           2. STATE & INTERVAL MANAGEMENT
+           2. STATE & DIAGNOSTICS (6 MODALITIES: EEG, fMRI, PET, sMRI, fNIRS, MEG)
            ========================================================================= */
         let state = {
             subject: 'Human_S042',
@@ -1178,16 +1178,17 @@
                     spectral_bands: {delta: 12, theta: 22, alpha: 14, beta: 32, gamma: 20}
                 },
                 fmri: {mean_bold: 3.5},
+                pet: {radiotracer: '18F-FDG & 11C-Raclopride', mean_suv: 6.8, peak_structure: 'Striatum / Frontal'},
+                mri: {field_tesla: '3.0T High-Resolution', sequence: 'T1 MPRAGE / T2 FLAIR', slice_thickness: '1.0 mm isotropic'},
                 fnirs: {hbo: 6.8, hbr: -2.9, toi: 72.0},
-                meg: {dipole_strength_ft: 75.0},
-                pupillometry: {diameter_mm: 5.2, state: 'Sympathetic Dynamic'}
+                meg: {dipole_strength_ft: 75.0}
             }
         };
 
         const eegChannelKeys = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'Cz', 'C4', 'T3', 'T4', 'P3', 'P4', 'O1', 'O2'];
 
         /* =========================================================================
-           3. STEPPER CONTROLLER FOR THE ASSESSMENT BATTERY
+           3. STEPPER & ASSESSMENT BATTERY
            ========================================================================= */
         let currentStep = 0;
         const totalSteps = 6;
@@ -1250,12 +1251,10 @@
             } else if (currentStep === 4) {
                 showStep(5);
             } else if (currentStep === 5) {
-                // Read Psychometrics
                 batteryResults.urge = parseFloat(document.getElementById('val-q-urge').innerText) || 7;
                 batteryResults.anxiety = parseFloat(document.getElementById('val-q-anx').innerText) || 4;
                 batteryResults.calm = parseFloat(document.getElementById('val-q-calm').innerText) || 6;
                 batteryResults.focus = parseFloat(document.getElementById('val-q-focus').innerText) || 6;
-
                 finishAndApplyBattery();
             }
         }
@@ -1267,38 +1266,27 @@
             }
         }
 
-        /* =========================================================================
-    TEST 1: 100% ACCURATE MEDIAPIPE FACE MESH & EAR BLINK DETECTOR
-    ========================================================================= */
+        /* --- MEDIAPIPE FACE MESH & EAR BLINK DETECTOR --- */
         let camStream = null;
         let blinkCountdownTimer = null;
         let blinksDetected = 0;
         let faceMeshInstance = null;
         let cameraAnimationId = null;
-
-        // Eye Aspect Ratio (EAR) স্টেট ও থ্রেশহোল্ড
         let isEyeClosed = false;
         let closedFrameCount = 0;
-        const EAR_THRESHOLD = 0.21; // চোখ বন্ধ হওয়ার বৈজ্ঞানিক স্ট্যান্ডার্ড থ্রেশহোল্ড
+        const EAR_THRESHOLD = 0.21;
 
-        // MediaPipe 468 Face Mesh Landmarks-এ চোখের ৬টি করে মূল পয়েন্টের ইনডেক্স
-        // [outer_corner, top_1, top_2, inner_corner, bottom_2, bottom_1]
         const LEFT_EYE_INDICES = [33, 160, 158, 133, 153, 144];
         const RIGHT_EYE_INDICES = [362, 385, 387, 263, 373, 380];
 
-        // ইউক্লিডীয় দূরত্ব (Euclidean Distance) হিসাবের ফাংশন
         function getEuclideanDistance(p1, p2) {
             return Math.hypot(p1.x - p2.x, p1.y - p2.y);
         }
 
-        // Eye Aspect Ratio (EAR) সূত্র: (|p2-p6| + |p3-p5|) / (2 * |p1-p4|)
         function calculateEyeAspectRatio(landmarks, eyeIndices) {
-            const p1 = landmarks[eyeIndices[0]];
-            const p2 = landmarks[eyeIndices[1]];
-            const p3 = landmarks[eyeIndices[2]];
-            const p4 = landmarks[eyeIndices[3]];
-            const p5 = landmarks[eyeIndices[4]];
-            const p6 = landmarks[eyeIndices[5]];
+            const p1 = landmarks[eyeIndices[0]], p2 = landmarks[eyeIndices[1]];
+            const p3 = landmarks[eyeIndices[2]], p4 = landmarks[eyeIndices[3]];
+            const p5 = landmarks[eyeIndices[4]], p6 = landmarks[eyeIndices[5]];
 
             const verticalA = getEuclideanDistance(p2, p6);
             const verticalB = getEuclideanDistance(p3, p5);
@@ -1308,27 +1296,17 @@
             return (verticalA + verticalB) / (2.0 * horizontal);
         }
 
-        // MediaPipe ল্যান্ডমার্কের আউটপুট প্রসেস করার ফাংশন
         function onFaceMeshResults(results) {
-            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-                return; // কোনো মুখ শনাক্ত না হলে বাদ দিন
-            }
-
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
             const landmarks = results.multiFaceLandmarks[0];
-
-            // উভয় চোখের EAR হিসাব এবং গড় মান নির্ধারণ
             const leftEAR = calculateEyeAspectRatio(landmarks, LEFT_EYE_INDICES);
             const rightEAR = calculateEyeAspectRatio(landmarks, RIGHT_EYE_INDICES);
             const avgEAR = (leftEAR + rightEAR) / 2.0;
 
-            // EAR থ্রেশহোল্ড চেক করে পলক শনাক্তকরণ
             if (avgEAR < EAR_THRESHOLD) {
                 closedFrameCount++;
-                if (closedFrameCount >= 1) {
-                    isEyeClosed = true;
-                }
+                if (closedFrameCount >= 1) isEyeClosed = true;
             } else {
-                // চোখ আবার খোলার সাথে সাথে একটি ব্লিংক সম্পন্ন হলো
                 if (isEyeClosed) {
                     blinksDetected++;
                     document.getElementById('cam-blinks-count').innerText = blinksDetected;
@@ -1338,35 +1316,27 @@
             }
         }
 
-        // ক্যামেরা ও MediaPipe লাইভ অ্যানালাইসিস শুরু
         async function startCameraBlinkAnalysis() {
             blinksDetected = 0;
             isEyeClosed = false;
             closedFrameCount = 0;
             document.getElementById('cam-blinks-count').innerText = '0';
-
             const video = document.getElementById('webcamVideo');
             const btn = document.getElementById('btn-start-camera');
             btn.disabled = true;
 
             try {
-                // ১. MediaPipe FaceMesh মডেল লোড করা
                 if (!faceMeshInstance) {
                     faceMeshInstance = new FaceMesh({
                         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
                     });
-
                     faceMeshInstance.setOptions({
-                        maxNumFaces: 1,
-                        refineLandmarks: true, // চোখের মনির জন্য হাই প্রিসিশন
-                        minDetectionConfidence: 0.5,
-                        minTrackingConfidence: 0.5
+                        maxNumFaces: 1, refineLandmarks: true,
+                        minDetectionConfidence: 0.5, minTrackingConfidence: 0.5
                     });
-
                     faceMeshInstance.onResults(onFaceMeshResults);
                 }
 
-                // ২. ওয়েবক্যাম স্ট্রিম চালু করা
                 camStream = await navigator.mediaDevices.getUserMedia({
                     video: {width: 320, height: 240, frameRate: {ideal: 30}}
                 });
@@ -1376,44 +1346,34 @@
                 let timeLeft = 15;
                 document.getElementById('cam-timer').innerText = `${timeLeft}s`;
 
-                // ৩. রিয়েল-টাইম ফ্রেম অ্যানালাইসিস লুপ (GPU অ্যাক্সিলারেটেড)
                 async function processVideoFrame() {
                     if (video && video.readyState >= 2 && camStream) {
                         await faceMeshInstance.send({image: video});
                     }
-                    if (camStream) {
-                        cameraAnimationId = requestAnimationFrame(processVideoFrame);
-                    }
+                    if (camStream) cameraAnimationId = requestAnimationFrame(processVideoFrame);
                 }
                 processVideoFrame();
 
-                // ৪. ১৫ সেকেন্ডের টাইমার কাউন্টডাউন
                 blinkCountdownTimer = setInterval(() => {
                     timeLeft--;
                     document.getElementById('cam-timer').innerText = `${timeLeft}s`;
-
                     if (timeLeft <= 0) {
                         clearInterval(blinkCountdownTimer);
                         stopCameraStream();
                         btn.disabled = false;
-
-                        // ১ মিনিটের Eye Blink Rate (EBR) হিসেব (১৫ সেকেন্ড * ৪)
                         const extrapolatedEBR = Math.round(blinksDetected * (60 / 15));
                         batteryResults.ebr = Math.max(8, extrapolatedEBR);
-
                         alert(`✅ MediaPipe EAR Analysis Complete!\n\nDetected Blinks: ${blinksDetected} (in 15s)\nCalculated EBR: ${batteryResults.ebr} blinks/min.`);
                     }
                 }, 1000);
-
             } catch (err) {
                 btn.disabled = false;
-                console.error("Camera/MediaPipe Error:", err);
-                alert("ক্যামেরা অন করা যায়নি বা পারমিশন পাওয়া যায়নি। ডিফল্ট ২২ blinks/min সেট করা হলো।");
+                console.error("Camera Error:", err);
+                alert("ক্যামেরা অন করা যায়নি। ডিফল্ট ২২ blinks/min সেট করা হলো।");
                 batteryResults.ebr = 22;
             }
         }
 
-        // ক্যামেরা ও অ্যানিমেশন লুপ বন্ধ করার ফাংশন
         function stopCameraStream() {
             if (camStream) {
                 camStream.getTracks().forEach(track => track.stop());
@@ -1429,17 +1389,21 @@
             }
         }
 
-        /* --- TEST 2: REACTION SPEED TEST --- */
-        let reactionState = 'idle'; // 'idle', 'waiting', 'ready'
+        /* --- REACTION SPEED TEST (MULTI-TRIAL) --- */
+        let reactionState = 'idle';
         let reactionStartTime = 0;
         let reactionTimeout = null;
+        const MAX_TRIALS = 3;
+        let currentTrial = 0;
+        let trials = [];
 
         function handleReactionBoxClick() {
             const box = document.getElementById('reactionBox');
             if (reactionState === 'idle') {
+                if (currentTrial === 0) trials = [];
                 reactionState = 'waiting';
                 box.style.background = '#f59e0b';
-                box.innerText = 'Wait for GREEN...';
+                box.innerText = `Trial ${currentTrial + 1}/${MAX_TRIALS}: Wait for GREEN...`;
 
                 const randomDelay = 1500 + Math.random() * 2500;
                 reactionTimeout = setTimeout(() => {
@@ -1455,34 +1419,51 @@
                 box.innerText = 'Too Early! Click to Try Again.';
             } else if (reactionState === 'ready') {
                 const reactionTime = Math.round(performance.now() - reactionStartTime);
-                reactionState = 'idle';
-                box.style.background = '#06b6d4';
-                box.innerText = `${reactionTime} ms! Click to Retest.`;
+                if (reactionTime < 100) {
+                    reactionState = 'idle';
+                    box.style.background = '#ef4444';
+                    box.innerText = 'Too Fast! Anticipated reaction. Click to Retry Trial.';
+                    return;
+                }
+                trials.push(reactionTime);
+                currentTrial++;
 
-                document.getElementById('reaction-ms-txt').innerText = `${reactionTime} ms`;
+                if (currentTrial < MAX_TRIALS) {
+                    reactionState = 'idle';
+                    box.style.background = '#06b6d4';
+                    box.innerText = `${reactionTime} ms! Click for Trial ${currentTrial + 1}/${MAX_TRIALS}`;
+                    document.getElementById('reaction-ms-txt').innerText = `${reactionTime} ms (Trial ${currentTrial})`;
+                } else {
+                    const avgReactionTime = Math.round(trials.reduce((sum, time) => sum + time, 0) / MAX_TRIALS);
+                    reactionState = 'completed';
+                    box.style.background = '#8b5cf6';
+                    box.innerText = `Avg: ${avgReactionTime} ms! Click to Restart Full Test.`;
+                    document.getElementById('reaction-ms-txt').innerText = `Avg: ${avgReactionTime} ms`;
 
-                // Score 1 - 10
-                let score = 5;
-                if (reactionTime < 440) score = 10;
-                else if (reactionTime < 480) score = 9;
-                else if (reactionTime < 530) score = 8;
-                else if (reactionTime < 400) score = 6;
-                else score = 4;
+                    let score = 4;
+                    if (avgReactionTime < 200) score = 10;
+                    else if (avgReactionTime < 240) score = 9;
+                    else if (avgReactionTime < 280) score = 8;
+                    else if (avgReactionTime < 330) score = 7;
+                    else if (avgReactionTime < 380) score = 6;
+                    else if (avgReactionTime < 450) score = 5;
 
-                batteryResults.reactionMS = reactionTime;
-                batteryResults.alertnessScore = score;
-                document.getElementById('alertness-score-txt').innerText = `${score} / 10`;
+                    batteryResults.reactionMS = avgReactionTime;
+                    batteryResults.alertnessScore = score;
+                    document.getElementById('alertness-score-txt').innerText = `${score} / 10`;
+                    currentTrial = 0;
+                    reactionState = 'idle';
+                }
             }
         }
 
-        /* --- TEST 3: WORKING MEMORY DIGIT SPAN --- */
+        /* --- WORKING MEMORY DIGIT SPAN --- */
         let memorySequence = [];
         function startDigitSpanTest() {
             document.getElementById('btn-start-digit-span').style.display = 'none';
             document.getElementById('digit-input-container').style.display = 'none';
             document.getElementById('user-digit-input').value = '';
 
-            // Generate 5-digit sequence
             memorySequence = [];
             for (let i = 0; i < 5; i++) memorySequence.push(Math.floor(Math.random() * 9) + 1);
 
@@ -1516,27 +1497,29 @@
             document.getElementById('btn-start-digit-span').innerText = 'Retest Sequence';
         }
 
-        /* --- TEST 4: RAPID MOTOR TAPPING TEST --- */
+        /* --- MOTOR TAPPING TEST --- */
         let tapCount = 0;
         let tapActive = false;
+        let tapStartTime = 0;
         let tapTimer = null;
+        const TAP_DURATION_MS = 5000;
 
         function handleRapidTap() {
             if (!tapActive) {
                 tapActive = true;
                 tapCount = 1;
+                tapStartTime = performance.now();
                 document.getElementById('tap-count-txt').innerText = tapCount;
-                let timeLeft = 5.0;
 
                 tapTimer = setInterval(() => {
-                    timeLeft -= 0.1;
-                    document.getElementById('tap-timer-txt').innerText = `${Math.max(0, timeLeft).toFixed(1)}s`;
-                    if (timeLeft <= 0) {
+                    const elapsed = performance.now() - tapStartTime;
+                    const remaining = Math.max(0, (TAP_DURATION_MS - elapsed) / 1000);
+                    document.getElementById('tap-timer-txt').innerText = `${remaining.toFixed(1)}s`;
+
+                    if (elapsed >= TAP_DURATION_MS) {
                         clearInterval(tapTimer);
                         tapActive = false;
-
-                        // Calculate Motor Firing %
-                        let motorPercent = 45;
+                        let motorPercent = 30;
                         if (tapCount > 30) motorPercent = 80;
                         else if (tapCount > 20) motorPercent = 60;
                         else motorPercent = 30;
@@ -1545,7 +1528,7 @@
                         document.getElementById('motor-act-txt').innerText = `${motorPercent}%`;
                         alert(`Time Up! You recorded ${tapCount} taps. Estimated motor activity: ${motorPercent}%.`);
                     }
-                }, 100);
+                }, 50);
             } else {
                 tapCount++;
                 document.getElementById('tap-count-txt').innerText = tapCount;
@@ -1556,7 +1539,6 @@
         function finishAndApplyBattery() {
             const r = batteryResults;
 
-            // Mathematical Neurotransmitter Estimations
             const calcDA = Math.min(2.8, Math.max(0.3, ((r.ebr / 17.0) * 0.6 + (r.urge / 10.0) * 0.4)));
             const calcNE = Math.min(2.5, Math.max(0.4, (r.currHR / r.baseHR) + (r.anxiety / 25.0)));
             const calcGlu = Math.min(2.5, Math.max(0.4, 0.5 + (r.alertnessScore / 10.0) * 1.0));
@@ -1564,7 +1546,6 @@
             const calc5HT = Math.min(2.2, Math.max(0.3, 0.4 + (r.calm / 10.0) * 0.8 - (r.anxiety / 25.0)));
             const calcACh = Math.min(2.2, Math.max(0.3, (r.memoryScore / 7.0) * 1.25));
 
-            // Circuits (%)
             const calcMeso = Math.min(100, Math.round(r.urge * 10));
             const calcVis = Math.round(r.visualScore);
             const calcMot = Math.round(r.motorScore);
@@ -1574,7 +1555,6 @@
             const hrElev = Math.max(0, (r.currHR - r.baseHR) / r.baseHR);
             const calcStr = Math.min(100, Math.round(hrElev * 80 + r.anxiety * 6));
 
-            // Set sliders
             document.getElementById('m-da').value = calcDA.toFixed(2);
             document.getElementById('m-ne').value = calcNE.toFixed(2);
             document.getElementById('m-glu').value = calcGlu.toFixed(2);
@@ -1597,7 +1577,7 @@
         }
 
         /* =========================================================================
-           4. PERIODIC INTERVAL SCHEDULER (CHECKS DURING EXPERIMENT)
+           4. PERIODIC INTERVAL SCHEDULER
            ========================================================================= */
         function triggerIntervalNow() {
             startAssessmentFlow();
@@ -1605,7 +1585,6 @@
 
         function checkIntervalTrigger(currentMin) {
             if (state.intervalMinutes > 0 && currentMin > 0 && (currentMin % state.intervalMinutes === 0)) {
-                // Pause clock and alert
                 state.isPlaying = false;
                 document.getElementById('btn-timer-toggle').innerText = '▶️ Resume';
                 alert(`⏰ Interval Check Due at T = ${currentMin}m!\nParticipant needs to complete Check #${state.intervalCount + 1}.`);
@@ -1649,7 +1628,6 @@
             state.multipliers.ach = parseFloat(document.getElementById('m-ach').value);
             state.paradigm = document.getElementById('paradigmSelect').value;
 
-            // UI Labels update
             document.getElementById('txt-c-meso').innerText = `${state.circuits.mesolimbic}%`;
             document.getElementById('txt-c-vis').innerText = `${state.circuits.visual}%`;
             document.getElementById('txt-c-cere').innerText = `${state.circuits.cerebellar}%`;
@@ -1681,7 +1659,9 @@
                 .then(res => {
                     if (res.status === 'success') {
                         state.regions = res.data.regions;
-                        state.diagnostics = res.data.diagnostics;
+                        if (res.data.diagnostics) {
+                            state.diagnostics = {...state.diagnostics, ...res.data.diagnostics};
+                        }
                         document.getElementById('txt-phase-title').innerText = `Phase: ${res.data.timeline.phase_name}`;
                         document.getElementById('txt-fatigue-val').innerText = res.data.timeline.fatigue_factor;
                         update14RegionLabels();
@@ -1727,9 +1707,23 @@
             state.activeTest = testType;
             document.querySelectorAll('.test-tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+
+            const statusLabels = {
+                eeg: 'Mode: 13-CH Digital Electroencephalography & 10-20 Scalp Field',
+                fmri: 'Mode: 3.0T BOLD Voxel Activation Map & Hemodynamic Curve',
+                pet: 'Mode: Dynamic Positron Emission Tomography (18F-FDG & 11C-Raclopride)',
+                mri: 'Mode: Structural MRI (T1-MPRAGE & T2-FLAIR Tissue Relaxation)',
+                fnirs: 'Mode: Near-Infrared Optical Spectroscopy (Cortical HbO / HbR)',
+                meg: 'Mode: 306-Channel SQUID Magnetic Dipole Flux (fT)'
+            };
+            const st = document.getElementById('diagnostic-status-txt');
+            if (st) st.innerText = statusLabels[testType] || 'Mode: Real-time Telemetry';
             updateSideTelemetryUI();
         }
 
+        /* =========================================================================
+           6. SIDE TELEMETRY UI (FOR 6 MODALITIES)
+           ========================================================================= */
         function updateSideTelemetryUI() {
             const box = document.getElementById('sideTelemetryBox');
             const d = state.diagnostics;
@@ -1763,6 +1757,32 @@
                         </div>
                     </div>
                 `;
+            } else if (state.activeTest === 'pet') {
+                const suvVal = (4.5 + (state.regions.midbrain || 60) * 0.05 + state.multipliers.dopamine * 1.5).toFixed(1);
+                box.innerHTML = `
+                    <div class="side-card">
+                        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">PET Molecular Biomarkers</span>
+                        <div style="font-size:0.82rem; line-height:1.9;">
+                            <div>Radiotracer: <strong style="color:var(--accent-amber);">18F-FDG & 11C-Raclopride</strong></div>
+                            <div>Mean Striatal SUV: <strong style="color:#ef4444;">${suvVal} g/mL</strong></div>
+                            <div>D2 Binding Potential (BPnd): <strong style="color:#06b6d4;">${(2.8 / state.multipliers.dopamine).toFixed(2)}</strong></div>
+                            <div>Cerebral Glucose Metabolic Rate: <strong style="color:#10b981;">${(34.2 + (state.regions.cerebrum || 50) * 0.22).toFixed(1)} µmol/100g/min</strong></div>
+                        </div>
+                    </div>
+                `;
+            } else if (state.activeTest === 'mri') {
+                box.innerHTML = `
+                    <div class="side-card">
+                        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">High-Resolution Structural MRI</span>
+                        <div style="font-size:0.82rem; line-height:1.9;">
+                            <div>Scanner Field: <strong style="color:var(--accent-cyan);">3.0 Tesla Clinical MRI</strong></div>
+                            <div>Sequences: <strong style="color:#c084fc;">Multi-Planar T1 & T2 FLAIR</strong></div>
+                            <div>Voxel Geometry: <strong>1.0 x 1.0 x 1.0 mm³ isotropic</strong></div>
+                            <div>Tissue Contrast: <strong style="color:#10b981;">Gray/White Matter Ratio 1.42</strong></div>
+                            <div>Cortical Thickness: <strong>2.68 mm (Normal)</strong></div>
+                        </div>
+                    </div>
+                `;
             } else if (state.activeTest === 'fnirs') {
                 box.innerHTML = `
                     <div class="side-card">
@@ -1784,17 +1804,6 @@
                         </div>
                     </div>
                 `;
-            } else if (state.activeTest === 'pupil') {
-                const dia = (2.2 + state.multipliers.norepi * 2.8 - state.multipliers.ach * 0.8).toFixed(2);
-                box.innerHTML = `
-                    <div class="side-card">
-                        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">Pupillometric Metrics</span>
-                        <div style="font-size:0.85rem; line-height:1.9;">
-                            <div>Pupil Diameter: <strong style="color:var(--accent-cyan); font-size:1.1rem;">${dia} mm</strong></div>
-                            <div>Autonomic Balance: <strong style="color:#ef4444;">Sympathetic Dominant</strong></div>
-                        </div>
-                    </div>
-                `;
             }
         }
 
@@ -1808,7 +1817,7 @@
         }
 
         /* =========================================================================
-           6. 3D REALISTIC BRAIN RENDERING ENGINE
+           7. 3D REALISTIC BRAIN RENDERING ENGINE (CANVAS)
            ========================================================================= */
         const bCanvas = document.getElementById('brainCanvas');
         const bCtx = bCanvas.getContext('2d');
@@ -1911,7 +1920,7 @@
         }
 
         /* =========================================================================
-           7. DIAGNOSTIC CANVAS
+           8. DIAGNOSTIC CANVASES (ORIGINAL DASHBOARD STYLE)
            ========================================================================= */
         const dCanvas = document.getElementById('diagnosticCanvas');
         const dCtx = dCanvas.getContext('2d');
@@ -1930,9 +1939,10 @@
 
             if (state.activeTest === 'eeg') renderEEGTest(w, h);
             else if (state.activeTest === 'fmri') renderFMRITest(w, h);
+            else if (state.activeTest === 'pet') renderPETTest(w, h);
+            else if (state.activeTest === 'mri') renderMRITest(w, h);
             else if (state.activeTest === 'fnirs') renderFNIRSTest(w, h);
             else if (state.activeTest === 'meg') renderMEGTest(w, h);
-            else if (state.activeTest === 'pupil') renderPupilTest(w, h);
 
             renderScalpTopomap();
             requestAnimationFrame(renderDiagnostic);
@@ -2014,6 +2024,125 @@
             dCtx.stroke();
         }
 
+        /* --- NEW: PET SCAN (DASHBOARD VOXEL & KINETIC UPTAKE STYLE) --- */
+        function renderPETTest(w, h) {
+            dCtx.fillStyle = '#fff';
+            dCtx.font = '12px monospace';
+            dCtx.fillText('Positron Emission Tomography (PET: 18F-FDG & 11C-Raclopride Tracer Grid)', 16, 22);
+
+            // Left: 180x180 PET Radiotracer Uptake Matrix (Rainbow Heatmap)
+            const gw = 180, gh = 180;
+            const gx = 20, gy = 40;
+            dCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+            dCtx.strokeRect(gx, gy, gw, gh);
+
+            const cols = 12, rows = 12;
+            const cellW = gw / cols, cellH = gh / rows;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const distToCenter = Math.hypot(c - 6, r - 6);
+                    const baseMetabolism = (state.regions.midbrain || 60) * 0.7;
+                    const act = Math.sin(clock * 2.5 + distToCenter) * 15 + baseMetabolism;
+                    if (distToCenter < 5.6) {
+                        const norm = Math.min(1.0, Math.max(0, act / 100));
+                        let red = 0, green = 0, blue = 0;
+                        if (norm < 0.25) {blue = 255; green = Math.round(norm * 4 * 255);}
+                        else if (norm < 0.5) {green = 255; blue = Math.round((1 - (norm - 0.25) * 4) * 255);}
+                        else if (norm < 0.75) {green = 255; red = Math.round((norm - 0.5) * 4 * 255);}
+                        else {red = 255; green = Math.round((1 - (norm - 0.75) * 4) * 255);}
+
+                        dCtx.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+                        dCtx.fillRect(gx + c * cellW, gy + r * cellH, cellW - 1, cellH - 1);
+                    }
+                }
+            }
+
+            // Right: Dynamic Tissue TAC Curve
+            const cx = 220, cy = 40, cw = w - 240, ch = 180;
+            dCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+            dCtx.strokeRect(cx, cy, cw, ch);
+            dCtx.fillStyle = '#94a3b8';
+            dCtx.font = '10px monospace';
+            dCtx.fillText('Radiotracer Binding (SUV) vs Kinetic Time (Tissue TAC Curve)', cx + 10, cy + 18);
+
+            dCtx.strokeStyle = '#f59e0b';
+            dCtx.lineWidth = 2.5;
+            dCtx.beginPath();
+            const midY = cy + ch / 2;
+            for (let x = 0; x < cw; x += 3) {
+                const t = clock * 2.8 + x * 0.05;
+                const tac = Math.sin(t) * ((state.regions.midbrain || 60) * 0.45) + Math.cos(t * 0.4) * 12;
+                const y = midY - tac;
+                if (x === 0) dCtx.moveTo(cx + x, y);
+                else dCtx.lineTo(cx + x, y);
+            }
+            dCtx.stroke();
+
+            const suvVal = (4.5 + (state.regions.midbrain || 60) * 0.05 + state.multipliers.dopamine * 1.5).toFixed(1);
+            dCtx.fillStyle = '#06b6d4';
+            dCtx.font = 'bold 14px monospace';
+            dCtx.fillText(`Peak Striatal Uptake: ${suvVal} g/mL SUV`, cx + 10, cy + ch - 12);
+        }
+
+        /* --- NEW: STRUCTURAL MRI (DASHBOARD TISSUE DENSITY & RF ECHO STYLE) --- */
+        function renderMRITest(w, h) {
+            dCtx.fillStyle = '#38bdf8';
+            dCtx.font = '12px monospace';
+            dCtx.fillText('Structural MRI 3.0T (T1 MPRAGE / T2 FLAIR Tissue Density Matrix)', 16, 22);
+
+            // Left: 180x180 Medical Grayscale & Cyan Anatomical Contrast Grid
+            const gw = 180, gh = 180;
+            const gx = 20, gy = 40;
+            dCtx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+            dCtx.strokeRect(gx, gy, gw, gh);
+
+            const cols = 12, rows = 12;
+            const cellW = gw / cols, cellH = gh / rows;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const distToCenter = Math.hypot(c - 6, r - 6);
+                    if (distToCenter < 5.6) {
+                        let brightness = 20;
+                        if (distToCenter < 1.8) brightness = 5;
+                        else if (distToCenter < 3.8) brightness = 140;
+                        else brightness = 95;
+
+                        brightness += Math.sin(clock * 2 + distToCenter) * 10;
+                        const b = Math.min(255, Math.max(0, Math.round(brightness)));
+                        dCtx.fillStyle = `rgb(${Math.round(b * 0.4)}, ${Math.round(b * 0.8)}, ${b})`;
+                        dCtx.fillRect(gx + c * cellW, gy + r * cellH, cellW - 1, cellH - 1);
+                    }
+                }
+            }
+
+            // Right: MRI Inversion Recovery & T1/T2 Decay Signal
+            const cx = 220, cy = 40, cw = w - 240, ch = 180;
+            dCtx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+            dCtx.strokeRect(cx, cy, cw, ch);
+            dCtx.fillStyle = '#94a3b8';
+            dCtx.font = '10px monospace';
+            dCtx.fillText('RF Pulse Echo & T2 Spin-Spin Relaxation Curve (Signal Intensity vs TE)', cx + 10, cy + 18);
+
+            dCtx.strokeStyle = '#38bdf8';
+            dCtx.lineWidth = 2.2;
+            dCtx.beginPath();
+            const midY = cy + ch / 2;
+            for (let x = 0; x < cw; x += 3) {
+                const t = clock * 3 + x * 0.05;
+                const decay = Math.sin(t) * 35 * Math.exp(-((x % 120) / 90)) + Math.cos(t * 0.6) * 10;
+                const y = midY - decay;
+                if (x === 0) dCtx.moveTo(cx + x, y);
+                else dCtx.lineTo(cx + x, y);
+            }
+            dCtx.stroke();
+
+            dCtx.fillStyle = '#10b981';
+            dCtx.font = 'bold 14px monospace';
+            dCtx.fillText('Tissue Matrix: 1.0mm Isotropic | SNR: 32.4 dB', cx + 10, cy + ch - 12);
+        }
+
         let fnirsHistoryO = new Array(80).fill(0);
         let fnirsHistoryR = new Array(80).fill(0);
         function renderFNIRSTest(w, h) {
@@ -2028,6 +2157,7 @@
             dCtx.moveTo(0, midY); dCtx.lineTo(w, midY);
             dCtx.stroke();
 
+            // HbO (Red)
             dCtx.strokeStyle = '#ef4444';
             dCtx.lineWidth = 2.5;
             dCtx.beginPath();
@@ -2038,6 +2168,7 @@
             });
             dCtx.stroke();
 
+            // HbR (Cyan)
             dCtx.strokeStyle = '#06b6d4';
             dCtx.lineWidth = 2.5;
             dCtx.beginPath();
@@ -2065,41 +2196,6 @@
                 if (x === 0) dCtx.moveTo(x, y); else dCtx.lineTo(x, y);
             }
             dCtx.stroke();
-        }
-
-        function renderPupilTest(w, h) {
-            const cx = w / 2;
-            const cy = h / 2;
-            const ne = state.multipliers.norepi;
-            const rad = Math.max(14, Math.min(80, 24 + (ne * 28) - (state.multipliers.ach * 8)));
-
-            dCtx.fillStyle = '#f8fafc';
-            dCtx.beginPath();
-            dCtx.ellipse(cx, cy, 140, 85, 0, 0, Math.PI * 2);
-            dCtx.fill();
-            dCtx.strokeStyle = '#334155';
-            dCtx.lineWidth = 3;
-            dCtx.stroke();
-
-            dCtx.fillStyle = '#0284c7';
-            dCtx.beginPath();
-            dCtx.arc(cx, cy, 70, 0, Math.PI * 2);
-            dCtx.fill();
-
-            dCtx.fillStyle = '#000000';
-            dCtx.beginPath();
-            dCtx.arc(cx, cy, rad, 0, Math.PI * 2);
-            dCtx.fill();
-
-            dCtx.fillStyle = 'rgba(255,255,255,0.7)';
-            dCtx.beginPath();
-            dCtx.arc(cx - 18, cy - 18, 10, 0, Math.PI * 2);
-            dCtx.fill();
-
-            const mm = (2.2 + state.multipliers.norepi * 2.8 - state.multipliers.ach * 0.8).toFixed(2);
-            dCtx.fillStyle = '#00f0ff';
-            dCtx.font = 'bold 15px monospace';
-            dCtx.fillText(`Pupil Diameter: ${mm} mm | LC-NE Sympathetic State`, 20, 30);
         }
 
         function renderScalpTopomap() {
@@ -2146,7 +2242,7 @@
         }
 
         /* =========================================================================
-           8. TIMELINE & AUTOMATIC PERIODIC INTERVAL TRIGGER
+           9. TIMELINE & RUN
            ========================================================================= */
         function onTimelineSlider(val) {
             state.minute = parseInt(val);
@@ -2164,10 +2260,7 @@
                 state.minute += 1;
                 document.getElementById('timeline-slider').value = state.minute;
                 document.getElementById('lab-clock-txt').innerText = `Elapsed: ${state.minute} / ${state.duration} min`;
-
-                // চেক করুন এই মিনিটে কোনো ইন্টারভ্যাল টেস্ট নেওয়ার সময় হয়েছে কি না
                 checkIntervalTrigger(state.minute);
-
                 triggerModulation();
             }
         }, 3000);
