@@ -2645,6 +2645,185 @@ body::after{display:none!important}
 })();
 
 </script>
+<script>
+const SNN=(function(){
+const NP=6,NE=160,NI=40,NN=200,TOT=1200,WE=1.5,WI=3.5,WX=0.8;
+let seed=12345;
+function rnd(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
+let sp=null;
+function randn(){if(sp!==null){const r=sp;sp=null;return r;}let x,y,s;do{x=2*rnd()-1;y=2*rnd()-1;s=x*x+y*y;}while(s>=1||s===0);const m=Math.sqrt(-2*Math.log(s)/s);sp=y*m;return x*m;}
+const v=new Float32Array(TOT),u=new Float32Array(TOT),A=new Float32Array(TOT),B=new Float32Array(TOT),C=new Float32Array(TOT),D=new Float32Array(TOT);
+const fired=new Uint8Array(TOT),Iin=new Float32Array(TOT),xt=new Float32Array(TOT),cnt=new Int32Array(NP);
+const S=[];for(let p=0;p<NP;p++)S.push(new Float32Array(NN*NN));
+const lesion=new Uint8Array(NP),ib=new Uint8Array(NP),stim=new Float32Array(NP),rate=new Float32Array(NP);
+/* src, dst, gain, prob : meso0 vis1 cere2 cen3 dmn4 stress5 */
+const PROJ=[[0,3,.8,.06],[1,3,.8,.06],[3,0,.6,.06],[3,4,-.8,.06],[4,3,-.6,.06],[5,3,-.7,.06],[5,0,.5,.06],[2,3,.6,.06],[3,2,.5,.06],[1,2,.4,.06],[3,1,.5,.06]];
+let epre,epost,ew,ew0,eel,pl,NEd=0,phasic=0,T=0,plastGain=1,evT=[],evK=[];
+function init(){
+ seed=12345;sp=null;T=0;phasic=0;rate.fill(0);fired.fill(0);xt.fill(0);
+ for(let p=0;p<NP;p++){const o=p*NN;
+  for(let i=0;i<NN;i++){const k=o+i,r=rnd();
+   if(i<NE){A[k]=.02;B[k]=.2;C[k]=-65+15*r*r;D[k]=8-6*r*r;
+    if(p===0){C[k]=-55;D[k]=4+2*r;} if(p===2){C[k]=-58;D[k]=4;}}
+   else{A[k]=.02+.08*r;B[k]=.25-.05*r;C[k]=-65;D[k]=2;}
+   v[k]=-65;u[k]=B[k]*v[k];}
+  const s=S[p];
+  for(let pre=0;pre<NN;pre++)for(let post=0;post<NN;post++)s[pre*NN+post]=pre===post?0:(pre<NE?WE*rnd():-WI*rnd());
+ }
+ const ep=[],eo=[],w=[];
+ PROJ.forEach(pr=>{for(let i=0;i<NE;i++)for(let j=0;j<NE;j++)if(rnd()<pr[3]){ep.push(pr[0]*NN+i);eo.push(pr[1]*NN+j);w.push(pr[2]*WX*(0.5+rnd()));}});
+ NEd=w.length;epre=Int32Array.from(ep);epost=Int32Array.from(eo);ew=Float32Array.from(w);ew0=Float32Array.from(w);eel=new Float32Array(NEd);pl=new Uint8Array(NEd);
+ for(let e=0;e<NEd;e++)pl[e]=w[e]>0?1:0;
+}
+function drive(p,m){
+ const lv=m.lv[p],ng=(0.6+0.8*lv)*(0.85+0.15*m.ne);let b=stim[p];
+ if(p===0)b+=3*(m.da-1);
+ if(p===3)b+=2*(m.da-1)+2*(m.ach-1);
+ if(p===1)b+=2*(m.ach-1);
+ if(p===5)b+=2.5*(m.ne-1)-2*(m.ser-1);
+ if(p===4)b-=1*(m.ser-1);
+ return [b,ng];
+}
+function step(m){
+ const g=m.glu,ga=m.gaba;
+ for(let p=0;p<NP;p++){const o=p*NN,dd=drive(p,m),b=dd[0],ng=dd[1];for(let i=0;i<NN;i++)Iin[o+i]=b+randn()*(i<NE?5:2)*ng;}
+ for(let k=0;k<TOT;k++)if(fired[k]){const p=(k/NN)|0,o=p*NN,pre=k-o,row=pre*NN,s=S[p],sc=pre<NE?g:ga*(ib[p]?0.1:1);for(let j=0;j<NN;j++)Iin[o+j]+=s[row+j]*sc;}
+ for(let e=0;e<NEd;e++)if(fired[epre[e]])Iin[epost[e]]+=ew[e]*g;
+ cnt.fill(0);
+ for(let k=0;k<TOT;k++){const p=(k/NN)|0;
+  if(lesion[p]){v[k]=-70;fired[k]=0;continue;}
+  let vv=v[k],uu=u[k];const I=Iin[k];
+  vv+=.5*(.04*vv*vv+5*vv+140-uu+I);vv+=.5*(.04*vv*vv+5*vv+140-uu+I);
+  uu+=A[k]*(B[k]*vv-uu);
+  if(vv>=30||vv!==vv){fired[k]=1;vv=C[k];uu+=D[k];cnt[p]++;evT.push(T);evK.push(k);}
+  else{fired[k]=0;if(vv<-100)vv=-100;}
+  v[k]=vv;u[k]=uu;}
+ /* three-factor STDP on inter-population excitatory edges */
+ const ds=phasic*(0.5+0.5*m.da)*plastGain;
+ for(let e=0;e<NEd;e++){if(!pl[e])continue;
+  let el=eel[e]*0.98;
+  if(fired[epre[e]])el-=0.012*xt[epost[e]];
+  if(fired[epost[e]])el+=0.01*xt[epre[e]];
+  eel[e]=el;
+  if(ds!==0){let w=ew[e]+0.02*ds*el;const mx=ew0[e]*2.5;ew[e]=w<0?0:(w>mx?mx:w);}}
+ for(let k=0;k<TOT;k++)xt[k]=xt[k]*0.95+fired[k];
+ phasic*=0.997;
+ for(let p=0;p<NP;p++)rate[p]+=(cnt[p]/NN*1000-rate[p])*0.01;
+ T++;if(evT.length>30000){evT.length=0;evK.length=0;}
+}
+function meanW(){let s=0,n=0;for(let e=0;e<NEd;e++)if(pl[e]){s+=ew[e]/ew0[e];n++;}return n?s/n:1;}
+function drain(){const o={t:evT,k:evK};evT=[];evK=[];return o;}
+init();
+return{init,step,rate,lesion,ib,stim,NN,NE,NP,TOT,meanW,drain,
+ pulse(x){phasic=Math.max(-1.5,Math.min(2,phasic+x));},setGain(x){plastGain=x;},
+ get t(){return T;},get phasic(){return phasic;},get gain(){return plastGain;},get edges(){return NEd;}};
+})();
+if(typeof module!=='undefined')module.exports=SNN;
+
+</script>
+<script>
+(function(){
+const NP=SNN.NP,PN=['Mesolimbic reward','Visual','Cerebellar loop','Executive (CEN)','Default mode','Stress axis'];
+const PID=['c-meso','c-vis','c-cere','c-cen','c-dmn','c-str'];
+const PCOL=['#fbbf24','#22d3ee','#60a5fa','#c084fc','#34d399','#f87171'];
+const css=`
+.snn-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+.snn-card{background:#060d1f;border:1px solid #1d2c48;border-radius:10px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#cbd5e1}
+.snn-card h4{color:#67e8f9;font-size:.78rem;margin-bottom:8px;letter-spacing:.5px}
+.snn-rate{display:grid;grid-template-columns:12px 130px 1fr 60px;align-items:center;gap:8px;margin:4px 0}
+.snn-rate i{width:10px;height:10px;border-radius:3px}
+.snn-rate .rb{height:6px;background:#17233d;border-radius:3px;overflow:hidden}
+.snn-rate .rb b{display:block;height:100%;transition:width .2s}
+.snn-rate em{font-style:normal;text-align:right;color:#e2e8f0}
+.snn-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.snn-row select{background:#111a30;border:1px solid #1e293b;color:#fff;padding:4px 6px;border-radius:6px;font-size:.72rem}
+.snn-arm{width:100px;height:100px;border-radius:12px;border:2px solid #334155;background:#0b1530;color:#fff;font-size:2rem;cursor:pointer}
+.snn-arm:hover{border-color:#22d3ee;box-shadow:0 0 16px rgba(34,211,238,.4)}
+.snn-arm:disabled{opacity:.35;cursor:default}
+`;
+const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+const modal=document.createElement('div');modal.className='modal-overlay';modal.id='snnModal';
+modal.innerHTML=`<div class="modal-box" style="width:1020px;max-width:96vw">
+<div class="modal-header"><h3 style="color:#67e8f9"><span>🧬</span> Spiking Network Engine · 6 populations · 1,200 Izhikevich neurons</h3><span style="cursor:pointer;color:var(--text-muted);font-size:1.2rem" id="snnClose">✕</span></div>
+<div class="snn-grid"><div>
+ <div class="snn-card"><h4>RASTER (last 1 s)  ·  rows = neurons, colour = population</h4><canvas id="snnRaster" width="620" height="240" style="width:100%;height:240px;background:#02050d;border-radius:6px"></canvas>
+ <div id="snnRates" style="margin-top:10px"></div>
+ <div class="snn-row"><button class="btn" id="snnRun">⏸ Pause</button><button class="btn btn-green" id="snnRew">💧 Reward pulse (DA +)</button><button class="btn" id="snnDip">📉 DA dip</button>
+ <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="snnDrive" checked> Drive dashboard from this simulation</label></div>
+ <div class="snn-row"><span>Condition:</span><select id="snnPop">${PN.map((n,i)=>`<option value="${i}">${n}</option>`).join('')}</select>
+ <select id="snnCond"><option value="lesion">Lesion (silence)</option><option value="stim">Stimulate (+4 nA)</option><option value="inh">Block inhibition (GABA-A antagonist)</option><option value="reset">Reset all conditions</option></select>
+ <button class="btn btn-purple" id="snnApply">Apply</button></div>
+ <div id="snnStats" style="margin-top:8px;color:#94a3b8"></div></div></div>
+<div class="snn-card"><h4>REINFORCEMENT-LEARNING TASK (probabilistic reversal, 60 trials)</h4>
+ <div style="font-size:.7rem;color:#94a3b8;margin-bottom:8px">Choose the symbol that pays off more often. The better symbol silently switches twice. A Q-learning model is then fitted to your choices (α learning rate, β choice consistency).</div>
+ <div style="display:flex;gap:14px;justify-content:center;margin:8px 0"><button class="snn-arm" id="armA" disabled>🔷</button><button class="snn-arm" id="armB" disabled>🔶</button></div>
+ <div style="text-align:center;margin-bottom:8px" id="rlInfo">Press Start</div>
+ <div class="snn-row" style="justify-content:center"><button class="btn btn-cyan" id="rlStart">▶ Start task</button><button class="btn" id="rlApply" disabled>Apply α to sim plasticity</button></div>
+ <div id="rlResult" style="margin-top:10px;line-height:1.7"></div>
+ <div style="margin-top:10px;font-size:.64rem;color:#f59e0b">⚠ Link between α and dopamine-dependent plasticity is a research hypothesis, not a validated measurement. One 60-trial session gives wide uncertainty.</div></div></div>
+<div style="font-size:.66rem;color:#94a3b8">Source of truth: activations below come from simulated spikes (Izhikevich neurons, E/I recurrent wiring, long-range projections, three-factor STDP). Neuromodulator sliders change currents/gains; circuit sliders set tonic drive. Small-scale circuit model, not a whole human brain.</div>
+<div class="modal-footer"><span></span><button class="btn" id="snnClose2">Close</button></div></div>`;
+document.body.appendChild(modal);
+const btn=document.createElement('button');btn.className='btn btn-cyan';btn.innerHTML='🧬 Spiking Engine';btn.onclick=()=>modal.classList.add('open');
+document.querySelector('.header-actions').prepend(btn);
+const closeM=()=>modal.classList.remove('open');document.getElementById('snnClose').onclick=closeM;document.getElementById('snnClose2').onclick=closeM;
+const rates=document.getElementById('snnRates');
+rates.innerHTML=PN.map((n,i)=>`<div class="snn-rate"><i style="background:${PCOL[i]}"></i><span>${n}</span><div class="rb"><b id="snnb${i}" style="background:${PCOL[i]}"></b></div><em id="snnv${i}">0 Hz</em></div>`).join('');
+const rc=document.getElementById('snnRaster'),rx=rc.getContext('2d');rx.fillStyle='#02050d';rx.fillRect(0,0,rc.width,rc.height);
+let run=true,drive=true,last=performance.now(),acc=0,lastT=0,lastApply=0,lastUI=0;
+document.getElementById('snnRun').onclick=function(){run=!run;this.textContent=run?'⏸ Pause':'▶ Resume';};
+document.getElementById('snnRew').onclick=()=>SNN.pulse(1);
+document.getElementById('snnDip').onclick=()=>SNN.pulse(-.6);
+document.getElementById('snnDrive').onchange=function(){drive=this.checked;badge();if(drive)applySim(true);else triggerModulation();};
+document.getElementById('snnApply').onclick=()=>{const p=+document.getElementById('snnPop').value,c=document.getElementById('snnCond').value;
+ if(c==='reset'){SNN.lesion.fill(0);SNN.ib.fill(0);SNN.stim.fill(0);}
+ else if(c==='lesion')SNN.lesion[p]=1;else if(c==='stim')SNN.stim[p]=4;else if(c==='inh')SNN.ib[p]=1;};
+function mods(){const g=id=>parseFloat(document.getElementById(id).value),on=k=>document.getElementById('toggle-'+k).checked?g('m-'+k)/50:.05;
+ return{da:on('da'),glu:on('glu'),gaba:on('gaba'),ne:on('ne'),ser:on('ser'),ach:on('ach'),lv:PID.map(i=>g(i)/100)};}
+const f=r=>Math.round(100*(1-Math.exp(-r/18))*10)/10,R=()=>centralBrainState.regions;
+function applySim(full){const r=SNN.rate,m=f(r[0]),vi=f(r[1]),ce=f(r[2]),cn=f(r[3]),dm=f(r[4]),sr=f(r[5]),X=R();
+ const set=(id,v)=>{if(X[id])X[id].activation_pct=Math.round(v*10)/10;};
+ set('frontal',cn);set('parietal',.5*cn+.5*vi);set('temporal',dm);set('occipital',vi);set('thalamus',.5*vi+.5*ce);set('hypothalamus',sr);set('pituitary',.9*sr);
+ set('hippocampus',dm);set('amygdala',sr);set('midbrain',m);set('pons',.5*ce+.5*sr);set('medulla',sr);set('cerebellum',ce);set('cerebrum',.35*cn+.25*vi+.25*dm+.15*m);
+ if(!full&&typeof runEEGForward==='function')runEEGForward();
+ applyCentralStateToUI(centralBrainState);}
+const tm=triggerModulation;window.triggerModulation=function(){tm();if(drive)applySim(true);};
+function badge(){const b=document.getElementById('srcBadge');if(b){b.textContent=drive?'SOURCE: SPIKING SIM (1,200 neurons)':'SOURCE: HEURISTIC FORMULA';b.style.color=drive?'#4ade80':'#fbbf24';}}
+const ph=document.querySelector('.telemetry-panel .panel-heading');if(ph){const b=document.createElement('span');b.id='srcBadge';b.className='data-badge-stanford';ph.appendChild(b);}badge();
+const bm=document.querySelector('#batteryModal .modal-header');if(bm){const w=document.createElement('div');w.style.cssText='font-size:.7rem;color:#f59e0b;margin-top:6px';w.textContent='⚠ Proxy estimate: behaviour-to-neurochemical mapping is heuristic, not a validated measurement.';bm.after(w);}
+function drawRaster(){const ev=SNN.drain(),W=rc.width,H=rc.height,T=SNN.t,px=.62,sh=Math.round((T-lastT)*px);lastT=T;
+ if(sh>0){rx.drawImage(rc,-sh,0);rx.fillStyle='#02050d';rx.fillRect(W-sh,0,sh,H);}
+ for(let i=0;i<ev.t.length;i++){const k=ev.k[i],x=W-(T-ev.t[i])*px,y=k/SNN.TOT*H;rx.fillStyle=PCOL[(k/SNN.NN)|0];rx.fillRect(x,y,1.6,1.3);}
+ rx.strokeStyle='rgba(148,163,184,.18)';for(let p=1;p<NP;p++){rx.beginPath();rx.moveTo(W-sh,p*H/NP);rx.lineTo(W,p*H/NP);rx.stroke();}}
+function drawUI(){for(let p=0;p<NP;p++){const r=SNN.rate[p];document.getElementById('snnb'+p).style.width=Math.min(100,r/40*100)+'%';document.getElementById('snnv'+p).textContent=(SNN.lesion[p]?'LESION':r.toFixed(1)+' Hz');}
+ document.getElementById('snnStats').textContent='t = '+(SNN.t/1000).toFixed(1)+' s | plastic edges '+SNN.edges+' | mean weight x'+SNN.meanW().toFixed(3)+' | DA signal '+SNN.phasic.toFixed(2)+' | plasticity gain '+SNN.gain.toFixed(2);}
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(60,now-last);last=now;if(!run)return;acc+=dt;let n=Math.floor(acc);acc-=n;n=Math.min(n,40);
+ if(n>0){const m=mods();for(let i=0;i<n;i++)SNN.step(m);}
+ if(modal.classList.contains('open')){drawRaster();if(now-lastUI>150){lastUI=now;drawUI();}}else SNN.drain();
+ if(drive&&now-lastApply>250){lastApply=now;applySim(false);}}
+requestAnimationFrame(loop);
+/* ---- RL task ---- */
+const A=document.getElementById('armA'),Bt=document.getElementById('armB'),info=document.getElementById('rlInfo'),res=document.getElementById('rlResult'),ap=document.getElementById('rlApply');
+let ch=[],rw=[],tr=0,fit=null;const NT=60;
+const best=t=>t<20?0:(t<40?1:0);
+function startRL(){ch=[];rw=[];tr=0;res.innerHTML='';ap.disabled=true;A.disabled=Bt.disabled=false;info.textContent='Trial 1 / '+NT;}
+function pick(c){const win=Math.random()<(c===best(tr)?.8:.2);ch.push(c);rw.push(win?1:0);SNN.pulse(win?1:-.5);tr++;
+ info.innerHTML=(win?'<b style="color:#4ade80">+1 reward</b>':'<b style="color:#f87171">no reward</b>')+' · Trial '+Math.min(tr+1,NT)+' / '+NT;
+ if(tr>=NT){A.disabled=Bt.disabled=true;doFit();}}
+function LL(al,be){let q=[.5,.5],L=0;for(let t=0;t<ch.length;t++){const p1=1/(1+Math.exp(-be*(q[1]-q[0]))),pc=ch[t]?p1:1-p1;L+=Math.log(Math.max(pc,1e-9));q[ch[t]]+=al*(rw[t]-q[ch[t]]);}return L;}
+function doFit(){const als=[],bes=[];for(let a=.05;a<.96;a+=.05)als.push(+a.toFixed(2));for(let b=.5;b<=10;b+=.5)bes.push(b);
+ let bl=-1e9,ba=0,bb=0;const pa={},pb={};
+ als.forEach(a=>bes.forEach(b=>{const l=LL(a,b);if(l>bl){bl=l;ba=a;bb=b;}pa[a]=Math.max(pa[a]||-1e9,l);pb[b]=Math.max(pb[b]||-1e9,l);}));
+ const ca=als.filter(a=>pa[a]>=bl-1.92),cb=bes.filter(b=>pb[b]>=bl-1.92),r2=1-bl/(NT*Math.log(.5)),acc=ch.filter((c,t)=>c===best(t)).length/NT;
+ fit={alpha:ba,beta:bb,ll:bl,r2,acc,aCI:[ca[0],ca[ca.length-1]],bCI:[cb[0],cb[cb.length-1]]};
+ res.innerHTML='Best-option choices: <b>'+(acc*100).toFixed(0)+'%</b><br>Learning rate α = <b style="color:#67e8f9">'+ba.toFixed(2)+'</b> (95% CI '+fit.aCI[0]+'–'+fit.aCI[1]+')<br>Consistency β = <b style="color:#67e8f9">'+bb.toFixed(1)+'</b> (95% CI '+fit.bCI[0]+'–'+fit.bCI[1]+')<br>Log-likelihood '+bl.toFixed(1)+' · pseudo-R² '+r2.toFixed(2);
+ ap.disabled=false;info.textContent='Task complete';
+ if(window.sessionLog)window.sessionLog.push({type:'rl_task',time:new Date().toISOString(),subject:state.subject,n_trials:NT,choices:ch,rewards:rw,fit:fit});}
+A.onclick=()=>pick(0);Bt.onclick=()=>pick(1);document.getElementById('rlStart').onclick=startRL;
+ap.onclick=()=>{if(fit){SNN.setGain(Math.max(.3,Math.min(3,fit.alpha/.3)));res.innerHTML+='<br><span style="color:#4ade80">Applied: plasticity gain x'+SNN.gain.toFixed(2)+'</span>';}};
+})();
+
+</script>
 </body>
 
 </html>
