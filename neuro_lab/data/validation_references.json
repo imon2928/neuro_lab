@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Validation benchmark reference directions and expected changes. Literature citations and empirical effect sizes are to be populated by the researcher.",
+  "benchmarks": [
+    {
+      "id": "eyes_closed_vs_open",
+      "scenario": "Eyes Closed vs. Eyes Open",
+      "target_metric": "eeg_alpha_power",
+      "expected_direction": "increase",
+      "expected_min_effect_pct": 20.0,
+      "citation": "",
+      "notes": "Berger effect: occipital and parietal alpha rhythm markedly increases upon eye closure due to reduction in visual input."
+    },
+    {
+      "id": "caffeine_challenge",
+      "scenario": "Caffeine Administration (Adenosine Antagonism)",
+      "target_metric": "eeg_beta_power",
+      "expected_direction": "increase",
+      "expected_min_effect_pct": 10.0,
+      "citation": "",
+      "notes": "Non-selective adenosine receptor antagonism leads to elevated alertness, higher vigilance, and increases in EEG beta/gamma power."
+    },
+    {
+      "id": "caffeine_cerebral_perfusion",
+      "scenario": "Caffeine Administration (Cerebral Vasoconstriction)",
+      "target_metric": "fmri_mean_bold",
+      "expected_direction": "decrease",
+      "expected_min_effect_pct": -5.0,
+      "citation": "",
+      "notes": "Adenosine receptor blockade mediates cerebral vasoconstriction, decreasing baseline global cerebral blood flow."
+    },
+    {
+      "id": "short_video_reels_novelty",
+      "scenario": "Rapid Algorithmic Video Feeds (Reels/Shorts)",
+      "target_metric": "striatal_dopamine_proxy",
+      "expected_direction": "increase",
+      "expected_min_effect_pct": 15.0,
+      "citation": "",
+      "notes": "High rate of sensory switching and unpredictable rewards evoke intermittent dopamine surges in the ventral striatum and mesolimbic loop."
+    },
+    {
+      "id": "resting_baseline_repeatability",
+      "scenario": "Resting State Baseline Repeatability",
+      "target_metric": "ei_balance_ratio",
+      "expected_direction": "unchanged",
+      "expected_min_effect_pct": 0.0,
+      "citation": "",
+      "notes": "A stable resting run with identical seed should exhibit low coefficient of variation (< 5%) across repeated iterations."
+    }
+  ]
+}

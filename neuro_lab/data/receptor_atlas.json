@@ -1,0 +1,170 @@
+{
+  "schema_version": "1.0.0",
+  "data_provenance": "PLACEHOLDER",
+  "is_placeholder": true,
+  "description": "Normalized receptor and transporter density (0.0 - 1.0) for 14 canonical regions. Replace with parcellations from scripts/export_atlas.py using neuromaps.",
+  "transmitters_mapped": {
+    "dopamine": ["D1", "D2", "DAT"],
+    "serotonin": ["5HT1A", "5HT2A", "SERT"],
+    "norepinephrine": ["NET", "alpha2A"],
+    "acetylcholine": ["alpha4beta2", "M1", "VAChT"],
+    "glutamate": ["NMDA", "mGluR5"],
+    "gaba": ["GABA_A"]
+  },
+  "regions": {
+    "frontal": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.65, "D2": 0.35, "DAT": 0.20,
+        "5HT1A": 0.70, "5HT2A": 0.85, "SERT": 0.30,
+        "NET": 0.75, "alpha2A": 0.80,
+        "alpha4beta2": 0.60, "M1": 0.80, "VAChT": 0.40,
+        "NMDA": 0.85, "mGluR5": 0.75,
+        "GABA_A": 0.80
+      }
+    },
+    "parietal": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.30, "D2": 0.15, "DAT": 0.10,
+        "5HT1A": 0.50, "5HT2A": 0.60, "SERT": 0.25,
+        "NET": 0.45, "alpha2A": 0.50,
+        "alpha4beta2": 0.50, "M1": 0.70, "VAChT": 0.30,
+        "NMDA": 0.75, "mGluR5": 0.65,
+        "GABA_A": 0.70
+      }
+    },
+    "temporal": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.35, "D2": 0.25, "DAT": 0.15,
+        "5HT1A": 0.80, "5HT2A": 0.75, "SERT": 0.40,
+        "NET": 0.50, "alpha2A": 0.60,
+        "alpha4beta2": 0.55, "M1": 0.75, "VAChT": 0.50,
+        "NMDA": 0.80, "mGluR5": 0.70,
+        "GABA_A": 0.75
+      }
+    },
+    "occipital": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.15, "D2": 0.10, "DAT": 0.05,
+        "5HT1A": 0.30, "5HT2A": 0.80, "SERT": 0.20,
+        "NET": 0.25, "alpha2A": 0.30,
+        "alpha4beta2": 0.35, "M1": 0.60, "VAChT": 0.20,
+        "NMDA": 0.70, "mGluR5": 0.60,
+        "GABA_A": 0.85
+      }
+    },
+    "cerebrum": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.40, "D2": 0.25, "DAT": 0.15,
+        "5HT1A": 0.60, "5HT2A": 0.70, "SERT": 0.30,
+        "NET": 0.50, "alpha2A": 0.55,
+        "alpha4beta2": 0.50, "M1": 0.70, "VAChT": 0.35,
+        "NMDA": 0.80, "mGluR5": 0.70,
+        "GABA_A": 0.75
+      }
+    },
+    "thalamus": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.20, "D2": 0.45, "DAT": 0.30,
+        "5HT1A": 0.40, "5HT2A": 0.30, "SERT": 0.85,
+        "NET": 0.80, "alpha2A": 0.70,
+        "alpha4beta2": 0.90, "M1": 0.40, "VAChT": 0.75,
+        "NMDA": 0.65, "mGluR5": 0.60,
+        "GABA_A": 0.90
+      }
+    },
+    "hypothalamus": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.30, "D2": 0.40, "DAT": 0.35,
+        "5HT1A": 0.75, "5HT2A": 0.40, "SERT": 0.80,
+        "NET": 0.90, "alpha2A": 0.85,
+        "alpha4beta2": 0.70, "M1": 0.50, "VAChT": 0.70,
+        "NMDA": 0.60, "mGluR5": 0.55,
+        "GABA_A": 0.85
+      }
+    },
+    "pituitary": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.10, "D2": 0.85, "DAT": 0.05,
+        "5HT1A": 0.30, "5HT2A": 0.20, "SERT": 0.30,
+        "NET": 0.40, "alpha2A": 0.50,
+        "alpha4beta2": 0.20, "M1": 0.30, "VAChT": 0.20,
+        "NMDA": 0.30, "mGluR5": 0.30,
+        "GABA_A": 0.60
+      }
+    },
+    "hippocampus": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.35, "D2": 0.25, "DAT": 0.10,
+        "5HT1A": 0.95, "5HT2A": 0.45, "SERT": 0.50,
+        "NET": 0.60, "alpha2A": 0.65,
+        "alpha4beta2": 0.65, "M1": 0.90, "VAChT": 0.80,
+        "NMDA": 0.95, "mGluR5": 0.85,
+        "GABA_A": 0.80
+      }
+    },
+    "amygdala": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.50, "D2": 0.55, "DAT": 0.25,
+        "5HT1A": 0.85, "5HT2A": 0.60, "SERT": 0.75,
+        "NET": 0.85, "alpha2A": 0.85,
+        "alpha4beta2": 0.60, "M1": 0.70, "VAChT": 0.60,
+        "NMDA": 0.85, "mGluR5": 0.80,
+        "GABA_A": 0.90
+      }
+    },
+    "midbrain": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.40, "D2": 0.90, "DAT": 0.95,
+        "5HT1A": 0.70, "5HT2A": 0.30, "SERT": 0.90,
+        "NET": 0.80, "alpha2A": 0.75,
+        "alpha4beta2": 0.75, "M1": 0.40, "VAChT": 0.70,
+        "NMDA": 0.60, "mGluR5": 0.55,
+        "GABA_A": 0.75
+      }
+    },
+    "pons": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.15, "D2": 0.25, "DAT": 0.15,
+        "5HT1A": 0.50, "5HT2A": 0.20, "SERT": 0.70,
+        "NET": 0.85, "alpha2A": 0.80,
+        "alpha4beta2": 0.80, "M1": 0.35, "VAChT": 0.75,
+        "NMDA": 0.50, "mGluR5": 0.45,
+        "GABA_A": 0.70
+      }
+    },
+    "medulla": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.10, "D2": 0.20, "DAT": 0.10,
+        "5HT1A": 0.45, "5HT2A": 0.20, "SERT": 0.65,
+        "NET": 0.80, "alpha2A": 0.85,
+        "alpha4beta2": 0.65, "M1": 0.30, "VAChT": 0.70,
+        "NMDA": 0.45, "mGluR5": 0.40,
+        "GABA_A": 0.75
+      }
+    },
+    "cerebellum": {
+      "placeholder": true,
+      "densities": {
+        "D1": 0.05, "D2": 0.05, "DAT": 0.02,
+        "5HT1A": 0.15, "5HT2A": 0.10, "SERT": 0.10,
+        "NET": 0.20, "alpha2A": 0.40,
+        "alpha4beta2": 0.25, "M1": 0.20, "VAChT": 0.15,
+        "NMDA": 0.75, "mGluR5": 0.70,
+        "GABA_A": 0.95
+      }
+    }
+  }
+}

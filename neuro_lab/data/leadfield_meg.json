@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "data_provenance": "PLACEHOLDER",
+  "is_placeholder": true,
+  "description": "Magnetic forward lead-field matrix for 14 regional dipole sources projecting to SQUID magnetometer sensors (femtotesla per dipole unit). Note: MEG has markedly higher sensitivity to tangential fissural sources (e.g. sulcal walls) than radial gyral crests, and diminished sensitivity to deep subcortical structures.",
+  "sensor_types": "Planar and Axial Gradiometers / Magnetometers (Vectorview-like)",
+  "regions": [
+    "frontal", "parietal", "temporal", "occipital", "cerebrum",
+    "thalamus", "hypothalamus", "pituitary", "hippocampus",
+    "amygdala", "midbrain", "pons", "medulla", "cerebellum"
+  ],
+  "channel_sensitivity": {
+    "MEG_Frontal":    [0.72, 0.10, 0.15, 0.02, 0.35, 0.04, 0.02, 0.01, 0.02, 0.04, 0.02, 0.01, 0.00, 0.02],
+    "MEG_Temporal":   [0.12, 0.14, 0.78, 0.08, 0.25, 0.03, 0.02, 0.01, 0.15, 0.08, 0.02, 0.01, 0.00, 0.03],
+    "MEG_Parietal":   [0.08, 0.74, 0.18, 0.22, 0.30, 0.04, 0.01, 0.00, 0.05, 0.02, 0.01, 0.01, 0.00, 0.08],
+    "MEG_Occipital":  [0.02, 0.20, 0.10, 0.82, 0.22, 0.03, 0.01, 0.00, 0.03, 0.01, 0.01, 0.01, 0.00, 0.14],
+    "MEG_Central":    [0.22, 0.40, 0.20, 0.10, 0.45, 0.06, 0.02, 0.01, 0.04, 0.02, 0.02, 0.01, 0.00, 0.05]
+  }
+}
